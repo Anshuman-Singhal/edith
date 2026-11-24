@@ -1,10 +1,10 @@
-# Interfaces spec (v1 wire protocol, PLAN v2)
+# Interfaces spec (v1 wire protocol, PLAN v3)
 
 Normative detail for [PLAN.md §2](../PLAN.md#2-interfaces). JSON Schema 2020-12 files in `schemas/v1/` are the source of truth (C27). Where this file and a schema disagree, fix the schema through WS-A. Decision IDs refer to [DECISIONS.md](../council/DECISIONS.md).
 
 ## 1. Conventions
 
-- **Clock (C61).** The supervisor exports `EDITH_T0_NS` and `EDITH_SPEED`. Every process (companion, Mock, linkshaper, cameras, gt_detector, scenario runner, fake_glasses) reads time through `edith_common.clock.ScaledClock`: `sim_ns = (wall_ns − T0) × speed`. `ts_ms` is ScaledClock epoch ms on the sender, and the companion's clock is authoritative. `--assets px4` forces `--speed 1`. Glasses never compare clocks: countdowns are `expires_ms − hud.ts_ms`, taken at receipt and run down on the glasses' monotonic clock.
+- **Clock (C61).** The supervisor exports `EDITH_T0_NS` and `EDITH_SPEED`. Every process (companion, Mock, linkshaper, cameras, gt_detector, scenario runner, fake_glasses) reads time through `edith_common.clock.ScaledClock`: `now_ns = T0 + (wall_ns − T0) × speed`, so `ts_ms` stays epoch-like (C94). `ts_ms` is ScaledClock epoch ms on the sender, and the companion's clock is authoritative. Lockout and expiry are ScaledClock ms. `--assets px4` forces `--speed 1`. Glasses and emulator durations are wall ms, so the supervisor refuses `--emulator` or real glasses at `--speed` ≠ 1 (C94). Glasses never compare clocks: countdowns are `expires_ms − hud.ts_ms`, taken at receipt and run down on the glasses' monotonic clock.
 - **Durations, not timestamps, cross the glasses link.** Input events carry `held_ms` and `duration_ms` (glasses-monotonic differences). The companion estimates press start as `t_recv − held_ms − rtt/2`.
 - **Geo.** WGS-84 decimal degrees. `alt_msl_m`, `alt_agl_m`; `hae_m = alt_msl_m + N`, where N is a per-site geoid constant in the scenario (`origin.geoid_n_m`, ≈ −33 m at the Piatt County site, EGM96, UNVERIFIED). Bearings are degrees true, 0–360 clockwise. Sim internals use ENU metres from the origin. MGRS is used only for display and voice.
 - **Position error (C57).** `ce_m` is always the **CE90 radius** in metres. Filters use σ = ce_m / 2.146. CoT `ce` = ce_m. Whether CoT consumers read `ce` as CE90, CEP50 or 1σ is UNVERIFIED; CE90 is the conservative (larger) choice.
@@ -25,12 +25,12 @@ Normative detail for [PLAN.md §2](../PLAN.md#2-interfaces). JSON Schema 2020-12
 | `sys.hello` | ↔ | on connect | `role: glasses\|emulator\|fake`, `proto: [int]`, `token` (provisioned by adb intent extra, C76), `device{model, fingerprint, sdk_int}`, `display{win_w, win_h, eye_w, eye_h, eyes: sbs\|mono}` (measured window), `input{ptt: hold\|toggle\|bt_key, temple_confirm: bool}`, `caps{inference[], camera, tts}` |
 | `sys.ping` / `sys.pong` | ↔ | 1 Hz | `t0_ms, t1_ms, t2_ms` (RTT only; never used to compare clocks) |
 | `head.pose` | ↑ | 10 Hz | `yaw_deg, pitch_deg, roll_deg, heading_deg, heading_unc_deg, source: rv\|fused\|game_rv\|scripted` |
-| `input.event` | ↑ | event | `kind: tap\|double_tap\|triple_tap\|slide_fwd\|slide_back\|slide_up\|slide_down\|ptt_down\|ptt_up\|two_finger_hold\|back\|bt_ptt_down\|bt_ptt_up`, `gesture_seq: int` (taps of one sequence share it), `held_ms?` (DOWN→emit), `duration_ms?`, `pointer_count`, `ctx{proposal_id?, alert_id?}` (what was on screen at DOWN) |
+| `input.event` | ↑ | event | `kind: tap\|double_tap\|triple_tap\|slide_fwd\|slide_back\|slide_up\|slide_down\|ptt_down\|ptt_up\|two_finger_hold\|back\|bt_ptt_down\|bt_ptt_up`, `gesture_seq: int` (taps of one sequence share it; ≤300 ms between taps, C106), `held_ms?` (DOWN→emit; on `ptt_down` and `bt_ptt_down`), `duration_ms?` (on `two_finger_hold`), `pointer_count`, `ctx{proposal_id?, alert_id?}` (what was on screen at the first DOWN; required on `ptt_down`, `bt_ptt_down` and `two_finger_hold`, C101) |
 | `voice.session.start` / `.stop` | ↑ | event | `session_id, trigger: ptt\|bt\|touch\|text`, `reason?` |
-| `voice.text` | ↑ | event | `session_id, text`. Accepted only with `--allow-text-injection` (C40) |
+| `voice.text` | ↑ | event | `session_id, text`. Accepted only with `--allow-text-injection`, which the supervisor sets only with `--headless` (the gateway then refuses `glasses`/`emulator` hellos), and only inside a PTT window; the text becomes the session final, `asr.engine=text` (C40, C87) |
 | `voice.partial` / `voice.final` | ↓ | partial ≤2 Hz (C58) | `session_id, text, conf: float\|null` |
 | `hud.state` | ↓ | on change ≤10 Hz + 2 Hz heartbeat | `HudState` (§4) |
-| `hud.event` | ↑ | event | `kind: inset_open\|inset_close\|alert_shown\|alert_cleared\|card_shown\|card_cleared, ref, ts_ms`. **`card_shown` is required for any confirm (C48).** `alert_shown` scopes bare responses (C81) |
+| `hud.event` | ↑ | event | `kind: inset_open\|inset_close\|alert_shown\|alert_cleared\|card_shown\|card_cleared, ref, ts_ms`. **`card_shown` is required for any confirm (C48).** It is emitted once per proposal from the draw pass of the first frame containing the card, re-emitted after reconnect while visible, and followed by `card_cleared` on removal (C105). `alert_shown` scopes bare responses (C81); `alert_cleared` is sent when the card covers the banner, and `alert_shown` again when the card closes (C101) |
 | `glasses.telemetry` | ↑ | 1 Hz | `battery_pct, current_ua, voltage_mv, temp_c, thermal_status, thermal_headroom, fps, decode_ms_p95, rtt_ms, usb_connected: bool` |
 | `perception.detections` | ↑ | per frame | `[Detection]` (placement benchmark only) |
 | binary `audio.up` | ↑ | 50 frames/s during PTT only | pcm_s16le 16 kHz mono, 20 ms. The first frames after `ptt_down` are the pre-roll buffer from finger DOWN (`preroll: true`, C46) |
@@ -61,9 +61,11 @@ Track          track_id, alias ("contact 3"), cls, conf, hits, window, geo{lat, 
                geo_quality: metric|pseudo (pseudo = replay, never contact_close, C70),
                first_seen_ms, last_seen_ms, source_assets[], status: new|confirmed|watched|marked|dismissed|lost,
                novelty, affiliation: unknown|friend|neutral|hostile, affiliation_src: machine|human,  # I6
-               assoc_friend_uid?: str (C52; set ⇒ no alert, no CoT, drawn as the friend), cot_uid, det_ids[-8:]
+               assoc_friend_uid?: str (C52, C98; sticky; set ⇒ no alert, no CoT, drawn as the friend), cot_uid, det_ids[-8:]
 Alert          alert_id, tier: advisory|caution|warning, score, kind: new_contact|contact_close|link_lost|
-               battery_low|geofence|teammate_stale|task_status|tak_link, label, ref{track_id|asset_id|uid},
+               battery_low|geofence|teammate_stale|task_status|tak_link,
+               label: PERSON|VEHICLE|GEOFENCE|TEAMMATE|D<n> LINK|TAK LINK|D<n> BATT|D<n> TASK|<n> NEW (enum, each ≤160 px at 28 px, C102),
+               ref{track_id|asset_id|uid},
                bearing_deg, range_m, ce_m?, row2, actions[watch|mark|dismiss|say_again|details], gesture_dismiss: bool (false on WARNING),
                signals{conf, novelty, proximity, closing, recency, class_w, aoi}, created_ms, expires_ms
 CommandIntent  intent_id, session_id, utterance{text, asr_conf: float|null, nbest[], engine, model_sha, norm_profile: spoken|written},
@@ -101,7 +103,7 @@ HudState       seq, ts_ms, mode: day|night, declutter: full|min|warn, quiet,
                voice{state: idle|listening|processing|await_confirm|say_again|muted|offline, partial?, last_heard?}
 ```
 
-Glasses compose banner row 1 as `label · <clock from bearing_deg − live heading> · ~<range rounded to max(50 m, ce_m)>`; the `~` is dropped at ≥1 km (C65). Rows 2/3 and the card rows come from the companion.
+Glasses compose banner row 1 as `label · <clock from bearing_deg − live heading> · ~<range rounded to max(50 m, ce_m)>`; the `~` is dropped at ≥1 km (C65). Kinds with no bearing (link, battery, task, TAK) render the label only, and row 1 is ≤470 px (C102). Rows 2/3 and the card rows come from the companion; the glasses append the `+N` queue to the right end of row 2 (≤400 px).
 
 ## 5. Ports (bind / send)
 
@@ -127,7 +129,7 @@ All test fixtures take `--port-base N` (default 0) added to every port so parall
 
 ## 6. Asset primitives and outbound classifier
 
-`AssetAdapter`: `connect()`, `telemetry()`, `arm()`, `takeoff(alt_agl_m)`, `goto(lat, lon, alt_agl_m)`, `orbit(lat, lon, radius_m, alt_agl_m, vel_mps=5)`, `search(polygon, alt_agl_m, overlap=0.3)`, `follow(uid_stream, standoff_m)` (P2; friendly PLI only, C51), `hold()`, `rtl()`, `land()`, `configure(params, fence)` (disarmed only). No generic `send_command`. Encodings live in `edith_common.px4` (C62), shared with MockVehicle.
+`AssetAdapter`: `connect()`, `telemetry()`, `arm()`, `takeoff(alt_agl_m)`, `goto(lat, lon, alt_agl_m)`, `orbit(lat, lon, radius_m, alt_agl_m, vel_mps=5)`, `search(polygon, alt_agl_m, overlap=0.3)`, `follow(uid_stream, standoff_m)` (P2; friendly PLI only, C51), `hold()`, `rtl()`, `land()`, `configure(fence, gf_params)` (disarmed only; pushes only the fence and `GF_*` and reads them back; all other profile params are applied only by the sim launcher, C90). No generic `send_command`. Encodings and the search planner `plan_search` live in `edith_common.px4` (C62, C87), shared with MockVehicle and the lint.
 
 **Outbound classifier (C50).** Every message the adapter emits passes `assets/outbound.py`:
 
@@ -146,33 +148,37 @@ All test fixtures take `--port-base N` (default 0) added to every port so parall
 | takeoff | 22 `NAV_TAKEOFF` (p7 AMSL) | AUTO.TAKEOFF → AUTO.LOITER | alt within ±1.5 m of target |
 | goto | 192 `DO_REPOSITION` (p2=1) | AUTO.LOITER | within 5 m and in LOITER |
 | orbit / observe(point or frozen contact) | 34 `DO_ORBIT` (radius, vel 5 m/s, yaw-to-centre) | **POSCTL.ORBIT** (main 3 / sub 1) | ongoing; `in_progress` |
-| search(area) | Upload `[NAV_TAKEOFF if landed, waypoints…]` (16) via `MISSION_COUNT`/`MISSION_REQUEST_INT`/`MISSION_ITEM_INT`/`MISSION_ACK`, then 300 `MISSION_START`. Lawnmower spacing = centre-line ground width × 0.7 (≈68 m at 60 m AGL, −60°, HFOV 70°) | AUTO.MISSION → AUTO.LOITER at end | last `MISSION_ITEM_REACHED` |
+| search(area) | Upload `[NAV_TAKEOFF if landed, plan_search waypoints…]` (16) via `MISSION_COUNT`/`MISSION_REQUEST_INT`/`MISSION_ITEM_INT`/`MISSION_ACK`, then 300 `MISSION_START`. Lawnmower spacing = centre-line ground width × 0.7 (≈68 m at 60 m AGL, −60°, HFOV 70°) | AUTO.MISSION → AUTO.LOITER at end | last `MISSION_ITEM_REACHED` |
 | follow(friendly uid) (P2) | `DO_REPOSITION` re-issued ≤1 Hz at standoff ≥30 m | AUTO.LOITER | ongoing; cancelled by any stop (I7) |
 | hold (safety stop) | 176 `DO_SET_MODE` custom main 4 / sub 3 | AUTO.LOITER | mode reached |
 | rtl / land | 20 / 21 | AUTO.RTL → AUTO.LAND / AUTO.LAND | `ON_GROUND` and disarmed |
 | speed | 178 `DO_CHANGE_SPEED` | — | ACK |
 | fence | `MISSION_TYPE_FENCE`, items type 5001 with p1 = vertex count; `GF_ACTION 1`, `GF_MAX_VER_DIST 120` | — | ACK |
 
-`custom_mode = main << 16 | sub << 24`. Composed landed tasks (C09): **search** = upload `[NAV_TAKEOFF, waypoints]` → arm → `MISSION_START`; **goto/orbit/observe** = arm → `NAV_TAKEOFF` immediately → send the verb once `IN_AIR` and alt ≥ 0.9 × target. Each step produces its own `Execution{step_idx}`. Liveness counts any inbound message: `degraded` after 1.5 s of silence, `lost` at the profile's `COM_DL_LOSS_T`.
+`custom_mode = main << 16 | sub << 24`. Composed landed tasks (C09): **search** = upload `[NAV_TAKEOFF, waypoints]` → arm → `MISSION_START`; **goto/orbit/observe** = arm → `NAV_TAKEOFF` immediately → send the verb once `IN_AIR` and alt ≥ 0.9 × target. Each step produces its own `Execution{step_idx}`. Liveness counts any inbound message: `degraded` after 1.5 s of silence, `lost` at the profile's `COM_DL_LOSS_T`. The vehicle then holds AUTO.LOITER for `COM_FAIL_ACT_T` before `NAV_DLL_ACT`; `dll_countdown_s = COM_DL_LOSS_T + COM_FAIL_ACT_T − silence` (C89).
 
 ## 7. CoT (TAK Protocol v0 XML out; v0 XML + v1 protobuf in)
 
 | Entity | `type` | `how` | Rate / stale | uid |
 |---|---|---|---|---|
 | Self (VIKING 1-1) | `a-f-G-U-C` | `m-g` (`m-s` in sim) | 10 s / 120 s | `EDITH-<companion>-self` |
-| Teammates (sim) | `a-f-G-U-C` | `m-s` | 10 s / 120 s | `EDITH-SIM-tm-<n>` |
+| Teammates (sim) | `a-f-G-U-C` | `m-s` | 2 s / 120 s (C98) | `EDITH-SIM-tm-<n>` |
 | Own quadcopter | `a-f-A-M-H-Q` | `m-g` | 1 Hz / 30 s | `EDITH-<companion>-D<n>` |
 | Machine vehicle | `a-u-G-E-V` | `m-f` (fused; UNVERIFIED against the CoT how taxonomy) | ≤1 Hz, ≥ every 30 s / 300 s | `EDITH-<companion>-trk-<track_id>` |
 | Machine person | `a-u-G` | `m-f` | ≤1 Hz / 300 s | same |
-| Human MARK | same `a-u-*` | `h-e` | / 900 s | same |
+| Human MARK | same `a-u-*` | `h-e` | / 900 s; never auto-deleted (C99) | same |
 | Human reclassify (companion UI only) | `a-h-*` / `a-n-*` / `a-f-*` | `h-e` | / 900 s | same |
 | Camera SPI | `b-m-p-s-p-i` | `m-g` | 1 Hz / 10 s | `EDITH-<companion>-D<n>-spi` |
 | NAI / checkpoint | `b-m-p-w` (UNVERIFIED) | `h-e` | long | `EDITH-POINT-<name>` |
 | Delete | `t-x-d-d` with `<link uid=… relation="none"/>` + `<__forcedelete/>` | `h-g-i-g-o` | once | target uid (C53) |
 | Ping / pong | `t-x-c-t` / `t-x-c-t-r` | `h-g-i-g-o` | see link monitor | `EDITH-<companion>-ping` |
 
-- **Retraction (C53).** DISMISS of a published machine track, or loss of one, emits a delete within 1 s. ATAK-CIV handling of `t-x-d-d` is UNVERIFIED (week-1 LAN check); the fallback re-sends the uid with `stale = now`.
-- **Friendly association (C52).** Tracks with `assoc_friend_uid` are never published.
+- **Retraction (C53, C99).**
+  - DISMISS of a published machine track emits a delete within 1 s.
+  - Loss deletes only **unmarked** `how=m-f` tracks. A track with `how=h-e` (MARKed) is never auto-deleted: on loss it is re-sent once as a last-known position (remarks `LKP <DTG>`) and keeps its 900 s stale.
+  - ATAK-CIV handling of `t-x-d-d` is UNVERIFIED (week-1 LAN check); the fallback re-sends the uid with `stale = now`.
+- **Dismiss disc gates CoT (C99).** The DISMISS suppression disc (15 m, same class, 10 min) also blocks CoT publication, so a dismissed object re-acquired under a new `track_id` is not re-published.
+- **Friendly association (C52, C98).** Tracks with `assoc_friend_uid` are never published.
 - **Sim markings (C55).** Every sim-sourced event's `remarks` starts with `EXERCISE`.
 - **Scope guard.** `tak/` is the only CoT egress. It refuses `a-h-*` without `affiliation_src=human`, any type outside this table and any friend-associated track, and logs each refusal.
 - **Inbound.** XML and TAK Protocol v1 mesh frames (`0xBF 0x01 0xBF` + protobuf) via `takproto` (Apache-2.0, optional extra), with one fixture each.
@@ -185,4 +191,4 @@ All test fixtures take `--port-base N` (default 0) added to every port so parall
 | `tcp` (OTS / fake router) | `t-x-c-t` every 3 s | 2 consecutive missed `t-x-c-t-r` (OTS support UNVERIFIED) | a reply arrives |
 | `mesh` (field multicast) | none possible | no inbound CoT from any peer for 12 s (config) | any peer CoT |
 
-While `lost`, every outbound event goes to the SQLite outbox. PLI is compacted to the latest per uid, and track and alert events keep their original `time`. On recovery the outbox sends, in order: (1) every event sent during the `lost_after + 2 s` before detection (it may have been dropped unseen); (2) the queue; (3) the latest state of every live track. Events whose `stale` has passed are dropped. CoT is idempotent on uid + time, so duplicates are harmless. Tests assert on the fake router's received log, never on the sender.
+While `lost`, every outbound event goes to the SQLite outbox. PLI is compacted to the latest per uid, and track and alert events keep their original `time`. On recovery the outbox sends, in order: (1) every event sent during the `lost_after + 2 s` before detection (it may have been dropped unseen); (2) the queue; (3) the latest state of every live track, including MARKed LKPs (C99). Events whose `stale` has passed are dropped. CoT is idempotent on uid + time, so duplicates are harmless. Tests assert on the fake router's received log, never on the sender.

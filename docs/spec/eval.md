@@ -1,4 +1,4 @@
-# Evaluation spec (PLAN v2)
+# Evaluation spec (PLAN v3)
 
 Normative protocol for [PLAN.md §6](../PLAN.md#6-evaluation). Every target is pre-registered here before W8.
 
@@ -9,7 +9,7 @@ Normative protocol for [PLAN.md §6](../PLAN.md#6-evaluation). Every target is p
 | **Primary evidence** | **Naive study participants' task utterances**: 6 tasks × 2 conditions × N (≈144 at N=12), during the G3 study at 75–80 dB(A) Leq30, measured at the wearer's ear. Report intent success with a 95% CI. |
 | Engineering corpus (B6) | ≥3 team speakers × 100 commands through the glasses' mics, played back at 60/75/85/95 dB(A) Leq30 at the ear. Reported **separately**. Bar: intent success ≥90% at 85 dB(A). Consent from all parties (PA law). |
 | Synthetic corpus | 2,000 grammar-sampled commands plus ≥100 human paraphrases. Kokoro and Piper voices at 0.9/1.1 speed. Noise per [voice.md §6](voice.md#6-corpus-and-noise-c67-c69), SNR clean to −5 dB. Bar at 10 dB: intent ≥95%, slot exact ≥90%, confident-wrong ≤0.5%. It ranks engines; it does not prove G1. |
-| Safety | 0 executions without a valid confirmation across: the audio lure suite (≥480 utterances, D10a); the 10,000-utterance text suite (regression only); ≥2 h of replayed chatter with PTT pressed at random; and the study lures (§4). |
+| Safety | 0 executions without a valid confirmation across: the audio lure suite (≥480 utterances plus ≥60 multi-line lures, D10a; invalid if the positive-control false-reject rate is >20%, C108); the 10,000-utterance text suite (regression only); ≥2 h of replayed chatter with PTT pressed at random; and the study lures (§4). |
 | Metrics | WER; intent success (correct proposal with all slots exact, ≤1 say-again); slot exact-match; confident-wrong (wrong proposal reaches the card); say-again rate; confirm FA/FR; per-stage p50/p95 latency, both idle and under `edith up`. |
 
 ## 2. G2: watch reduction (C70)
@@ -24,13 +24,16 @@ Normative protocol for [PLAN.md §6](../PLAN.md#6-evaluation). Every target is p
   - Baseline B0: all N feeds visible for the whole mission (AFS = N·T).
   - Condition E: the scripted operator model opens the inset on `alert_shown` and closes it after R = 6 s or on clear. R = 3 s and R = 10 s are also reported.
   - WR = 1 − AFS_E / AFS_B0. AFS per true event is a secondary metric.
+  - **Synthetic-seconds charge (C100).** About 90% of mission time at 10% duty is synthetic empty footage, where a real detector's false alerts are not observed. AFS_E therefore charges those seconds at the real-seconds FA rate (upper 95% CI) × R. The uncharged WR is reported as secondary.
 - **Events and recall.**
   - An event is an entity ≥12 px tall **at detector input** (tile scale logged), unoccluded for ≥1 s.
   - On replay, recall is matched **in image space**: IoU ≥0.3 against the annotated track within 10 s. On synthetic, a match is the same class within ≤20 m or ≤ ce_m.
   - A collapsed alert recalls every GT entity inside its extent.
+  - A GT entity also counts as recalled if it is boxed in an inset frame during operator-watched seconds within 10 s of event onset (C100), because queued alerts are never dropped.
   - Recall is also reported by pixel height (8–32 px).
-- **False alerts.** FA/h counts **real-footage seconds only**, with an exact Poisson 95% CI. FA on synthetic empties is reported separately.
-- **Geolocation.** CEP90 and fusion are measured **only on synthetic missions with `nav_noise`**. Replay tracks are `geo_quality: pseudo` and never raise `contact_close`.
+- **False alerts (C100).** FA/h counts **real-footage seconds only**, each unique real segment counted once. Exposure is only about 0.33 h at 10% duty (0 FA still gives a 95% upper bound of 11/h), so the pre-registered decision rule is **point estimate ≤6/h**, reported with exposure hours and an exact Poisson 95% CI. FA on synthetic empties is reported separately.
+- **Alert budget (C100).** In Phase 0 the C81 budget (≤2 in any 60 s, ≤20/h) is a **measured target, not a cap**: excess CAUTION/ADVISORY alerts queue and are never dropped. Alerts/h against the budget is a secondary outcome.
+- **Geolocation.** CEP90 and fusion are measured **only on synthetic missions with `nav_noise`**. Replay tracks are `geo_quality: pseudo`, are tracked in a motion-compensated image plane ([sim §4](sim.md#4-cameras-video-policy-and-frame-sync-c59-c60), C95), and never raise `contact_close`.
 - **Person missions.** These fly at 45–50 m AGL with −45° pitch, so a person is about 12.7 px tall at a 576×320 detector input.
 - **Procedure.** 10 seeded missions × 10 min × 2 drones. Bootstrap 95% CIs. Sweep τ_c and persistence, then freeze the operating point at W8.
 

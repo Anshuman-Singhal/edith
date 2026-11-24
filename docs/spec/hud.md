@@ -1,6 +1,6 @@
-# HUD spec (PLAN v2)
+# HUD spec (PLAN v3)
 
-Normative detail for [PLAN.md §3.7](../PLAN.md#37-hud). Owner: WS-H (Alisha). Widths were measured by hud r2 with PIL on the bundled B612-Bold.ttf.
+Normative detail for [PLAN.md §3.7](../PLAN.md#37-hud). Owner: WS-H (Alisha). Widths were measured by hud r2/r3 with PIL and fontTools on the bundled B612-Bold.ttf. B612 covers `→ · — … ± ° ◉` [probed r3]; `✕` is not in the cmap and is drawn as a vector.
 
 ## 1. Display facts
 
@@ -12,7 +12,7 @@ Normative detail for [PLAN.md §3.7](../PLAN.md#37-hud). Owner: WS-H (Alisha). W
   - APL ≤13% persistent and ≤25% transient.
   - ≤30 fps.
   - Red for warnings only.
-- **Line heights (B612):** 35 px at 28 px, 25 px at 20 px, 20 px at 16 px.
+- **Line heights (B612):** 35 px at 28 px, 25 px at 20 px, 20 px at 16 px. Line boxes exceed the row pitch, so every geometry lint measures the **ink bbox** (Skia text bounds / Pillow `getbbox`), never the line box (C103).
 
 ## 2. Regions v2 (C65)
 
@@ -23,8 +23,8 @@ Normative detail for [PLAN.md §3.7](../PLAN.md#37-hud). Owner: WS-H (Alisha). W
 | Heading tape | 200,20–420,58 | ±55° compressed (2 px/°), 10° ticks, cardinals, boxed 3-digit heading. Carets at y46–58. Vector clamps at the ends |
 | Drone inset | 440,20–610,148 | 170×128 of the 320×240 video. Contrast-stretched without lifting blacks |
 | Inset label | 440,150–610,166 | `D2 · LIVE · 0.4s` / `D2 · FROZEN 3s` (122 px) plus a vector slash when the frame is >1 s old |
-| Drone chips | 440,170–610,204 | `D1 ORBIT 62%` `D2 LINK✕ RTL 0:12` (16 px; ✕ is vector) |
-| Center clear zone | 170,150–470,326 | Nothing persistent. Only the conformal caret band y232–248, \|Δ\|≤11°, hidden at yaw rate >60°/s or heading unc >10°. No reticle |
+| Drone chips | 440,170–610,204 | `D1 ORBIT 62%` `D2 LINK✕ RTL 0:12` (16 px; ✕ is vector). **≤2 chips at a 17 px pitch**; more drones collapse into `+N D` (C103) |
+| Center clear zone | **190,150–430,326** (±4.5°, C103) | Nothing persistent. Only the conformal caret band y232–248, \|Δ\|≤11°, hidden at yaw rate >60°/s or heading unc >10°. No reticle |
 | Banner / card | 60,330–580,424, **fixed** | Rows of 28/20/20 px at pitch 32/24/24 |
 | Voice row | 30,432–250,458 | Vector state shape + `LISTENING` / `READY` / `PROCESSING` / `MUTED` / `VOICE OFFLINE`. `REC` at x215–250 |
 | Transcript | 260,432–610,458 | 16 px last heard, ellipsized at the **head**, fades after 3 s |
@@ -33,8 +33,12 @@ Normative detail for [PLAN.md §3.7](../PLAN.md#37-hud). Owner: WS-H (Alisha). W
 ## 3. Text-fit rules (C65)
 
 - Fit is checked by **measured width on the bundled TTF**, never by character count.
-  - Card and banner rows: ≤490 px at 20 px.
-  - Banner row 1: ≤400 px at 28 px, with 84 px reserved for the tier glyph and the `+N` queue. The worst case is `VEHICLE · 11 o'clock · 1.5 km` (`~` dropped at ≥1 km).
+  - Card rows and banner row 3: ≤490 px at 20 px.
+  - **Banner row 1 (C102): ≤470 px at 28 px**, with only the 32 px tier glyph reserved. Row 1 is composed on the glasses with the live clock, so fixtures alone cannot prove fit.
+  - **Banner row 2: ≤400 px at 20 px.** The `+N` queue indicator (≈80 px with its tier glyphs) sits at the right end of row 2.
+  - **Alert `label` is an enum**, each value ≤160 px at 28 px [measured r3, Pillow on B612-Bold]: `PERSON` 111, `VEHICLE` 113, `GEOFENCE` 143, `TEAMMATE` 154, `D<n> LINK` 109, `TAK LINK` 123, `D<n> BATT` 116, `D<n> TASK` 113, and the flood label `<n> NEW` (111 at n=12). Kinds with no bearing (link, battery, task, TAK) render the label only.
+  - The worst bearing tail is ` · 12 o'clock · ~950 m` (302 px; `~` is dropped at ≥1 km), so the worst row 1 is `TEAMMATE` + tail = 456 px.
+  - **Tests:** D4 (Pillow) and D11 (Skia) both render every label × 12 clocks × {~50…~950 m in 50 m steps, 1.0…1.5 km in 0.1 km steps} and assert ≤470 px.
 - **Read-back rows.** The read-back is `readback.rows[2]`:
   - Row A: `<CALLSIGN> → <STEPS> <TARGET>`
   - Row B: `<MGRS-8> · <size/R> · ALT n m`
@@ -76,8 +80,8 @@ Normative detail for [PLAN.md §3.7](../PLAN.md#37-hud). Owner: WS-H (Alisha). W
 ## 6. Alert banner and confirm card
 
 ```
-◆ VEHICLE · 2 o'clock · ~400 m                  +2 ◆▲     row1 28 px ≤400 px, live clock
-  DRONE 2 · UNKNOWN · 12 s                                row2 20 px
+◆ VEHICLE · 2 o'clock · ~400 m                            row1 28 px ≤470 px, live clock
+  DRONE 2 · UNKNOWN · 12 s                     +2 ◆▲      row2 20 px ≤400 px + queue
   say WATCH · MARK · DISMISS                              row3 20 px
 ```
 The 2 px tier border flashes at 2 Hz for 2 s, then holds steady (≤3 Hz).
@@ -97,13 +101,17 @@ DRONE 1 → LAUNCH + SEARCH NAI 1                                 row A (20 px, 
 - Gesture dismiss: `DISMISSED · slide back to undo` for 3 s before it commits (C47).
 
 **Card rules (C81):**
-- While a card is open, CAUTION and ADVISORY alerts queue (`+N`).
+- While a card is open, CAUTION and ADVISORY alerts queue (`+N`). The card covers the banner, so the glasses send `alert_cleared` when the card covers it and `alert_shown` again when the card closes; bare alert responses are NOOP meanwhile ([voice §5](voice.md#5-confirmation-c48-single-owner-companionedith_companionsafetyconfirm_rulepy), C101).
 - A WARNING invalidates the card.
 - No declutter level hides the card, stop toasts, voice state or a WARNING.
 
 ## 7. Input (C46, C47)
 
 The glasses `InputFsm` runs on raw pointer events in `HudActivity.dispatchTouchEvent`, before super. hud-core contains no pointer modifiers (lint).
+
+- **Hold vs slide (C106):** PTT requires movement below the system touch slop for the first 300 ms; otherwise the gesture is a slide, so a slow slide never opens PTT and `slide_back` undo still works. Slide fwd/back direction follows the system "natural mode" setting; it is mapped in `platform-rayneo` and recorded in T6.
+- **Multi-tap window (C106):** taps belong to one `gesture_seq` only if each follows the previous UP within ≤300 ms, so a slow triple-tap is never split into a double-tap plus a tap.
+- **`hud.event` emission (C105):** `card_shown{ref=proposal_id}` is emitted exactly once per proposal, from the draw pass of the first frame that contains the card (never on message receipt), re-emitted after a reconnect while the card is visible, and followed by `card_cleared` on removal. `alert_shown` / `alert_cleared` follow the same rule.
 
 | Gesture | Glasses emit | Companion action |
 |---|---|---|
@@ -112,9 +120,9 @@ The glasses `InputFsm` runs on raw pointer events in `HudActivity.dispatchTouchE
 | Slide fwd / back | `slide_fwd` / `slide_back` | Next / prev alert. `slide_back` during the undo window undoes a dismiss |
 | Double tap | `double_tap{gesture_seq}` | **Held 400 ms**, dropped if `triple_tap` with the same `gesture_seq` follows. Then: CANCEL if a card is open, else DISMISS if `alert.gesture_dismiss` (false on WARNING) |
 | Triple tap | `triple_tap{gesture_seq}` | **SAFETY STOP: hold all** (L1, C08), no delay |
-| Two-finger hold, raw-timed, with progress ring | `two_finger_hold{duration_ms}` | CONFIRM if ≥1000 ms and `touch_temple` is enabled. Never opens a voice session |
-| Single tap | `tap` | None by default. In the toggle-PTT fallback: a confirmed single tap (450 ms with no second tap) toggles PTT (8 s cap) |
-| BT HID PTT key | `bt_ptt_down` / `bt_ptt_up` | PTT (study, both arms; C72) |
+| Two-finger hold, raw-timed, with progress ring | `two_finger_hold{duration_ms, ctx}` (ctx captured at the first DOWN) | CONFIRM if ≥1000 ms, `touch_temple` is enabled, and the voice §5 lockout, card-context and expiry rules pass (C101). Never opens a voice session |
+| Single tap | `tap` | None by default. In the toggle-PTT fallback: a confirmed single tap (450 ms with no second tap) toggles PTT (8 s cap); the pre-roll ring is kept through the 450 ms decision (C109) |
+| BT HID PTT key | `bt_ptt_down{held_ms, ctx}` / `bt_ptt_up` | PTT (study, both arms; C72); a press under voice §5 |
 
 - Input is ignored within 300 ms of a wear-state change.
 - The SDK click sound is off while PTT is armed.
@@ -138,7 +146,7 @@ The glasses `InputFsm` runs on raw pointer events in `HudActivity.dispatchTouchE
 - **APL:** mean linear luminance (0.2126R + 0.7152G + 0.0722B after sRGB decode) over one eye.
   - Persistent states are measured with the inset and banner closed: ≤13% (night ≤3%).
   - Transient states: ≤25%.
-- **Geometry:** every text run's bounds lie inside its region. Nothing is drawn in the clear zone except the caret band.
+- **Geometry:** every text run's **ink bbox** lies inside its region. Nothing is drawn in the clear zone (190,150–430,326) except the caret band.
 - **Minimums:** text ≥16 px; stroke ≥2 px.
 - **Font coverage:** every codepoint is in the cmap.
 - **Golden list (≥24 states × 2 views):**
@@ -148,6 +156,7 @@ The glasses `InputFsm` runs on raw pointer events in `HudActivity.dispatchTouchE
   - Night, plus night with inset.
   - `FROZEN`, `COMPANION LOST — LOCAL ONLY`, `HDG ±`, `DISMISSED · undo`.
   - DATA stale line, declutter MIN/WARN, the quiet-mode hint.
-- **Approval:**
-  - Alisha approves the first goldens from a generated contact sheet.
+- **Approval (C106):**
+  - In Phase B the builder commits **provisional** goldens plus a contact sheet; D11 diffs against those.
+  - Alisha's approval of the contact sheet is a post-handoff gate (by Dec 17), after which the approved set replaces the provisional one.
   - Goldens are approved on Linux only. Other OSes run the lints only (C77).
