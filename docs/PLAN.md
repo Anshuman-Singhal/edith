@@ -1,250 +1,152 @@
-# E.D.I.T.H. — Phase 0 Plan (v1)
+# E.D.I.T.H. — Phase 0 Plan (v2)
 
-Status: v1, merged by the plan editor from the eight round-1 proposals ([architect](council/r1/architect.md), [defense_sme](council/r1/defense_sme.md), [hud](council/r1/hud.md), [ml](council/r1/ml.md), [voice](council/r1/voice.md), [sim](council/r1/sim.md), [platform](council/r1/platform.md), [pm](council/r1/pm.md)) and the lead's binding rulings. Every conflict resolution is in [DECISIONS.md](council/DECISIONS.md) (IDs `L*` = lead ruling, `C*` = council resolution). Date: 2026-11-23.
+Status: v2, 2026-11-23. Merges the eight round-2 reviews ([r2/](council/r2/)) into v1 under lead rulings L12–L24. Every resolution is logged in [DECISIONS.md](council/DECISIONS.md) (`L*` = lead ruling, `C*` = council resolution) and indexed issue by issue in [r2/RESOLUTION.md](council/r2/RESOLUTION.md). Normative detail lives in five spec files that this plan links to:
+- [interfaces](spec/interfaces.md)
+- [voice](spec/voice.md)
+- [hud](spec/hud.md)
+- [sim](spec/sim.md)
+- [eval](spec/eval.md)
 
-Tags: **UNVERIFIED** = not yet confirmed (usually a device fact for day one). **[probed]** = measured in this workspace by a council member.
+Tags: **UNVERIFIED** = not yet confirmed. **[probed]** = measured in this workspace by a council member.
 
 ---
 
 ## 0. Summary and goals
 
-E.D.I.T.H. is a voice-first operator layer. The RayNeo X3 Pro glasses are a thin client (screen, ears, eyes; never the brain). A pure-Python companion service (laptop in Phase 0, Android phone or ARM box in Phase 1) owns all state: world model, voice→intent, safety gate and confirmation state machine, MAVLink asset control, edge perception on drone video, alert ranking, the TAK/CoT bridge and store-and-forward sync. Drones are simulated only: Tier 0 MAVLink mock for CI, Tier A PX4 SIH + ground-truthed synthetic/replay camera (default), Tier B Gazebo on a GPU laptop. Detections are always published as **unknown**; only a human reclassifies. Every asset command needs read-back + explicit confirm, except the HOLD/ABORT safety stop, which only removes motion (L1). No weapons/targeting/engagement, no face or biometric ID, no real flights (L10). Everything runs offline.
+E.D.I.T.H. is a voice-first operator layer.
 
-| Goal (deck slide 7) | Numeric target (pre-registered) | Primary evidence |
+- **Glasses.** The RayNeo X3 Pro is a thin client: screen, ears and eyes, never the brain.
+- **Companion.** A pure-Python service owns all state. It runs on a laptop in Phase 0 and on an Android phone or ARM box in Phase 1. It holds:
+  - the world model;
+  - voice→intent;
+  - the safety gate and confirmation FSM;
+  - MAVLink asset control;
+  - edge perception on drone video;
+  - alert ranking;
+  - the TAK/CoT bridge;
+  - store-and-forward.
+- **Drones are simulated only.** Tier 0 is MockVehicle, the CI and default tier now. Tier A is PX4 SIH, gated on approval (L14). Tier B is Gazebo on a GPU laptop.
+- **Detections are always published as unknown.** Only a human reclassifies.
+- **Confirmation.** Every motion command needs a read-back the glasses confirm they displayed, plus an explicit confirm. The only exception is the HOLD/ABORT safety stop, which only removes motion (L1).
+- **Scope limits.** No weapons, targeting or engagement. No face or biometric ID. No real flights (L10).
+- **Everything runs offline.**
+
+| Goal | Pre-registered target | Evidence |
 |---|---|---|
-| **G1** One operator directs a drone by voice from the glasses | Intent success ≥90% at 85 dB(A) through the glasses' mics. p95 end-of-speech→read-back ≤1.5 s (hard ceiling 2.5 s). Confirm→command sent ≤500 ms. **0 executions without confirmation** (safety stop excepted) across the adversarial suite (10,000 non-confirm utterances) and ≥2 h of replayed chatter. Confident-wrong proposals ≤0.5% at 10 dB SNR. | `bench goal1` noise curve; live demo at 85 dB(A); audit log |
-| **G2** AI filtering cuts how much video the operator must watch | Watch reduction WR = 1 − AFS_E/AFS_B0 **≥80% at system event recall ≥90%**. False alerts ≤6/h per drone. Median time-to-detection ≤3 s. Geolocation CEP90 ≤30 m at 60 m AGL (sim). | `bench goal2` on replayed real aerial clips with bootstrap CIs |
-| **G3** HUD stays readable and safe under stress | Alert response ≥20% faster than the same software on a chest-mounted phone (or an honestly reported null). SAGAT non-inferior within 5 points. NASA-TLX no higher. **0 accidental confirms in ≥180 lure trials**. Banner legible within 2 s in ≥95% of trials. Persistent lit-pixel ratio (APL) ≤13%. | N=18 within-subject study (IRB), golden-PNG lints |
-| **G4** Cost model and roadmap to a real product | A sourced per-kit BOM (full kit and lite kit) and unit economics, with every number cited or marked UNVERIFIED. A Phase 1–3 roadmap with gates. | `docs/cost/model.csv` + `tools/cost_model.py`; §8 |
-
-Targets sources: G1 [pm §1.6](council/r1/pm.md), [voice §3](council/r1/voice.md); G2 [ml §1.4](council/r1/ml.md); G3 [hud §5](council/r1/hud.md); G4 [pm §1.7](council/r1/pm.md).
+| **G1** One operator directs a drone by voice from the glasses | Intent success ≥90% on naive study participants' utterances (≈144, 75–80 dB(A) Leq30 at the ear), and separately ≥90% on the B6 engineering corpus at 85 dB(A). p95 end-of-speech→card ≤1.5 s (ceiling 2.5 s), idle and under `edith up`. Confirm→sent ≤500 ms. **0 executions without a valid confirmation** across the audio lure suite (≥480), the 10,000 text suite and ≥2 h of chatter. Confident-wrong ≤0.5% at 10 dB SNR | Study log; `bench goal1`; audit log ([eval §1](spec/eval.md#1-g1-voice-tasking-c69)) |
+| **G2** AI filtering cuts the video the operator must watch | WR ≥80% at event recall ≥90% on composed real-footage missions at 10% duty cycle (curve at 5/10/20%). FA ≤6/h per drone over real seconds (Poisson CI). Median TTD ≤3 s. CEP90 ≤30 m on synthetic missions with nav noise | `bench goal2` ([eval §2](spec/eval.md#2-g2-watch-reduction-c70)) |
+| **G3** HUD stays readable and safe under stress | Alert response ≥20% faster than the phone-native arm with the same PTT and earbud, or an honestly reported null. SAGAT non-inferior within 5 points. TLX no higher. **0 accidental confirms in ≥192 lures** (95% UB 1.6%). Wrong-read-back catch rate reported. Row 1 read correctly within 2 s in ≥95%. APL ≤13% | N=18 study ([eval §4](spec/eval.md#4-g3-hud-user-study-c72)); golden lints |
+| **G4** Cost model and roadmap | Capex per kit, opex per seat-year and 5-yr TCO, all sourced or UNVERIFIED. Phase 1–3 roadmap with gates | `docs/cost/model.csv` + `cost_model.py` ([eval §5](spec/eval.md#5-g4-cost-model-c79)); §8 |
 
 ---
 
 ## 1. Architecture
 
-### 1.1 Layers and components
+### 1.1 Layers
 
-| Layer (deck slide 14) | Phase 0 realization | Owns |
+| Layer | Phase 0 realization | Owns |
 |---|---|---|
-| 1 Glasses · interface | Kotlin Android app on the RayNeo X3 Pro (`rayneo` flavor), or any Android phone (`generic`), or the desktop emulator | Rendering `HudState` and applying head-relative transforms locally (tape, heading-up map, conformal caret, clock wording). Capture of mic, IMU and (benchmark only) camera. Temple input. Staleness display. **No mission logic, and no mission data at rest.** |
-| 2 Companion · compute | `edith_companion` (Python 3.13, asyncio) on a laptop | World model, voice pipeline, parser, safety gate, proposal state machine, asset adapters, perception, alert ranker, HUD policy, TAK bridge, outbox, event log, touch-fallback web UI |
-| 3 Mesh · network | LAN Wi-Fi on a travel router. CoT over UDP multicast 239.2.3.1:6969. OpenTAKServer is optional (L7). | Team picture, store-and-forward after jamming |
-| 4 Assets | PX4 SIH ×2 (Tier A) or MockVehicle (Tier 0) behind `AssetAdapter`; synthetic/replay cameras | Flight behavior, failsafes, video |
+| 1 Glasses | Kotlin app: `rayneo` flavor on the X3 Pro, `generic` on any Android phone, or the desktop emulator | Rendering `HudState`; head-relative transforms (tape, heading-up map, caret, clock wording); mic with PTT pre-roll; IMU; temple and BT-key input; staleness display. No mission logic and no mission data at rest |
+| 2 Companion | `edith_companion` (Python 3.13, asyncio) on a laptop | All policy (list above) plus the event log and the `/ui/touch` fallback |
+| 3 Mesh | LAN Wi-Fi on a travel router. CoT over UDP multicast in the field, mesh-emu through linkshaper in sim and CI (C54). OTS optional (L7) | Team picture; keepalive link monitor; store-and-forward |
+| 4 Assets | MockVehicle ×N now; PX4 SIH ×N once approved; both behind `AssetAdapter` and a shared `edith_common.px4` profile (C62) | Flight behaviour, failsafes, video |
 
-The design rule ([architect §1.1](council/r1/architect.md)) is that **policy lives on the companion and layout lives on the glasses**. The companion decides *what* is shown: one alert, the card, whether the inset is visible, which entities appear. The glasses decide *where the pixels go*. Policy is therefore unit-testable in Python, and the renderer stays dumb and portable to trusted hardware.
+**Design rule:** policy lives on the companion and layout lives on the glasses. The companion decides *what* is shown: one alert, the card, the inset, the entities. The glasses decide *where the pixels go*. Policy is unit-testable in Python, and the renderer stays dumb and portable.
 
 ### 1.2 Diagram
 
 ```
-                         ┌───────────────────────── Glasses (RayNeo X3 Pro / phone / emulator) ─────────────────────────┐
-                         │ hud-core renderer (Compose DrawScope) ── StereoCompositor (SBS 2×640×480 | MONO)              │
-                         │ PoseSource(3DoF heading) · InputSource(temple) · MicSource(16k PCM) · CameraSource(bench)      │
-                         └──────────────▲───────────────────────────────┬────────────────────────────────────────────────┘
-                     hud.state ≤10 Hz   │ video.down JPEG 320×240        │ head.pose 10 Hz · input.event · audio.up (PTT only)
-                     voice.partial      │ 10–15 fps (inset visible)      │ sys.ping 1 Hz · glasses.telemetry 1 Hz · hud.event
-                                        │        WebSocket :7400  (JSON text frames + binary frames)
-┌───────────────────────────────────────┴────────────────────────────────▼────────────────────────────────────────────────┐
-│ Companion (edith_companion, laptop)                                                                                     │
-│  gateway ─ voice(VAD→ASR→normalize→Lark parse→resolve) ─ safety gate ─ proposals FSM ─ assets(AssetAdapter)              │
-│     │                                                                         ▲            │ pymavlink                    │
-│  hud projector ◄─ alerts(ranker) ◄─ perception(FrameSource→Detector→Tracker→Geo→Fusion)     │                              │
-│     │                     ▲                                  ▲ RTP H.264 :5600+i            │ MAVLink :14740+i              │
-│  eventlog(SQLite WAL)   tak(CoT build, scope guard, outbox) ─┼──── UDP mcast 239.2.3.1:6969 ─┼─► ATAK-CIV phone / TOC      │
-│  http :7401 (/healthz, god-view, /ui/touch)                  │ pose sidecar :5700+i          │   (opt. OpenTAKServer :8087)│
-└──────────────────────────────────────────────────────────────┼──────────────────────────────┼─────────────────────────────┘
-                                                               │                              │
-┌────────────────────────────── Sim (edith_sim) ───────────────┴──────────────────────────────┴─────────────────────────────┐
-│ scenario runner (seeded clock) ─ entity mover ─ teammate CoT sim ─ GT logger (sim.truth.*, bench/tests only)              │
-│ synthetic camera (NAIP ortho + sprites) | replay camera ─► RTP 5600+i + sidecar 5700+i                                     │
-│ linkshaper (UDP proxy, jam windows) ◄──► PX4 SIH ×N (:14540+i)  or  MockVehicle ×N                                          │
-└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+ ┌──────────────── Glasses (RayNeo X3 Pro / phone / emulator) ────────────────────────────────┐
+ │ hud-core (GraphicsLayer → StereoCompositor SBS|MONO) · InputFsm(dispatchTouchEvent, BT key)  │
+ │ PoseSource 3DoF · MicSource (500 ms pre-roll ring from finger DOWN) · CameraSource (bench)    │
+ └───────▲ hud.state ≤10 Hz · voice.partial ≤2 Hz · video.down JPEG 320×240 ───┬───────────────┘
+         │                WebSocket :7400 /v1/ws                               │ input.event · audio.up (PTT only)
+         │                                                                      ▼ hud.event (card_shown!) · head.pose
+ ┌───────┴──────────────────────── Companion (edith_companion) ─────────────────────────────────┐
+ │ gateway ─ voice(VAD→ASR→normalize[spoken|written]→Lark→resolve) ─ safety(gate, FSM,          │
+ │   confirm_rule, stop) ─ assets(AssetAdapter → outbound classifier MOTION|SAFE|CONFIG) ──┐    │
+ │ hud projector ◄ alerts(ranker) ◄ perception(FrameSource|OffloadDetector → detector →    │    │
+ │   ground-plane tracker → geo CE90 → fusion → friendly association)                     │    │
+ │ eventlog (SQLite WAL) · tak(CoT, scope guard, LinkMonitor, outbox) · http :7401         │    │
+ └──────▲ RTP :5600+i (SEI frame_id) · sidecar :5700+i · Detections :5800+i ───────┐     │    │
+        │                                       CoT mesh-emu :16968⇄16969 ─┐     │     │ MAVLink udpin :14740+i
+ ┌──────┴────────────────────────── Sim (edith_sim) ───────────────────────┼─────┼─────┼────────┐
+ │ scenario runner (ScaledClock) · mover · simd cameras + gt_detector ◄─ truth tap :14640+i     │
+ │ linkshaper (MAVLink 14540+i⇄14580+i, tak, video windows; mavlink_wire.jsonl) · fake CoT     │
+ │ router :18088/:18087 · teammate sim · MockVehicle ×N (or PX4 SIH ×N) · gt_events.jsonl       │
+ └──────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### 1.3 Demo topology
 
 | Box | Runs | Network |
 |---|---|---|
-| Demo laptop (Linux; macOS/WSL for dev) | companion, PX4 SIH ×2 (or Mock), synthetic cameras ×2, linkshaper, teammate sim, scenario runner; god-view on the projector | Wired or 5 GHz to the travel router |
-| RayNeo X3 Pro | `app-android` `rayneo` flavor | 5 GHz Wi-Fi; mDNS `_edith._tcp` with manual-IP override |
-| ATAK-CIV Android phone | Stock ATAK-CIV, mesh SA on, mirrored to the projector | Same Wi-Fi (multicast) |
-| Optional TOC laptop | OpenTAKServer or WinTAK, plus the OTS web map | TCP 8087 |
-| Optional GPU laptop | Tier B Gazebo | Its RTP 5600+i replaces the synthetic camera |
-| Travel router (~$35) | No internet. A phone hotspot is the field fallback. | Venue Wi-Fi is never used ([platform §1.3](council/r1/platform.md)) |
+| Demo laptop (native Linux, designated by Dec 12, C78) | Companion, PX4 SIH ×2 (or Mock), simd, linkshaper, teammate sim, scenario runner; god-view on the projector | Wired or 5 GHz to the travel router |
+| RayNeo X3 Pro | `rayneo` APK, provisioned by `adb shell am start … --es ws … --es token …` (C76) | 5 GHz Wi-Fi |
+| ATAK-CIV phone | Stock ATAK-CIV, mesh SA | Same Wi-Fi (multicast) |
+| Forearm phone (fallback) | `/ui/touch` if T7 disables temple confirm (C65) | Same Wi-Fi |
+| Optional TOC laptop / GPU laptop | OTS or WinTAK; Tier B Gazebo | TCP 8087; RTP 5600+i |
+| Travel router (~$35) | No internet; phone hotspot as field fallback | Venue Wi-Fi never used |
 
 ### 1.4 Core loops
 
 | Loop | Flow | Budget |
 |---|---|---|
-| **1 Voice → confirm → drone** | Hold right temple ≥300 ms → `input.event{ptt_down}` → `audio.up` streams → release + 150 ms tail → VAD trim, streaming ASR final (partials on HUD) → normalizer + Lark parse → resolver (heading snapshot at PTT release, MGRS, gazetteer) → safety gate → `CommandProposal` → card in `hud.state.proposal` → 600 ms lockout (longer while TTS plays) → second press "CONFIRM" alone, temple two-finger hold ≥1 s, or companion `/ui/touch` hold → `Confirmation` → gate re-check → `Execution{sent}` → MAVLink → `COMMAND_ACK` → `accepted` → telemetry → `completed`. **Safety stop:** one utterance (HOLD/ABORT/STOP), temple triple-tap or companion HOLD ALL sends hold (AUTO.LOITER) immediately and cancels any pending proposal (L1) | Card ≤500 ms p50 / ≤1.5 s p95 after end of speech; confirm→sent ≤500 ms; stop ≤500 ms |
-| **2 Video → detection → alert → HUD/TAK** | 1280×720 H.264 on RTP 5600+i + pose sidecar 5700+i → latest-frame `FrameSource` → scheduler 2 Hz/feed (4 Hz tasked, 1 Hz after 30 s with no tracks) → YOLOX-Tiny on 2×2 tiles → ByteTrack-style tracker → confirmation (≥3 hits of 5, mean conf ≥ τ) → flat-earth geolocation with `ce_m` → cross-drone fusion and novelty → ranker → one banner in `hud.state.alert` + inset policy; in parallel CoT `a-u-*` to the mesh, remarks "machine · unconfirmed". Operator: WATCH (pin), MARK (human-confirmed, `how=h-e`), DISMISS (suppress) | TTD ≤3 s median; capture→alert ≤1.5 s p95 on a team laptop |
-| **3 Jamming → degraded → resync** | Scenario `jam` → linkshaper drops both directions on `mavlink:drone2` and `tak:*` → 1.5 s without heartbeat: `link=degraded` → at `COM_DL_LOSS_T` (20 s): `lost`, PX4 runs `NAV_DLL_ACT`=Return (C12) → HUD greys the D2 chip, "D2 LINK LOST · RTL 0:12", CAUTION alert, any D2 proposal invalidated → CoT outbox (SQLite) queues, PLI compacted to latest per uid, track/alert events keep original `time` → window ends → heartbeat back, `link=ok` → outbox flushes in order, HUD clears staleness | `ok` ≤2 s after window; flush order 100% preserved |
+| **1 Voice → confirm → drone** | Finger DOWN on the right pad → mic opens into a 500 ms local ring → at 300 ms held, `ptt_down{held_ms, ctx}` + pre-roll frames, then live `audio.up` (a second pointer or an early UP discards the buffer; nothing leaves the device) → release + 150 ms tail → ASR final (partials ≤2 Hz) → normalizer profile → Lark → resolver (heading snapshot at release) → gate → `CommandProposal` → card → glasses send `hud.event{card_shown}` → 600 ms lockout → confirm per the rule ([voice §5](spec/voice.md#5-confirmation-c48-single-owner-companionedith_companionsafetyconfirm_rulepy)) → gate re-check → DISPATCHED → MOTION messages leave via the outbound classifier → `Execution` per step → `COMMAND_ACK` → completed. **Safety stop:** a stop utterance (grammar or spotting), triple-tap or companion HOLD ALL cancels adapter repeating tasks and retries, sends hold to every scoped airborne asset with a live link, and supersedes any pending proposal (L1, L16) | Card ≤500 ms p50 / ≤1.5 s p95; confirm→sent ≤500 ms (incl. mission upload); stop ≤500 ms |
+| **2 Video → alert → HUD/TAK** | RTP H.264 + SEI frame_id on 5600+i and sidecar `pose_est` on 5700+i → latest-frame FrameSource (or `[Detection]` on 5800+i from gt_detector/offload) → scheduler (2 Hz default, 4 Hz tasked, 1 Hz idle, 4 Hz for 5 s after any unconfirmed detection, capped at 1 Hz while PTT is down) → YOLOX-Tiny tiles → geo-project → **ground-plane ENU Kalman tracker** → confirm 3/5 → fusion, novelty, **friendly association** → ranker → one banner + inset policy; CoT `a-u-*` `how=m-f` to the mesh. Operator WATCH / MARK / DISMISS (DISMISS retracts the CoT) | TTD ≤3 s median; capture→alert ≤1.5 s p95 on a team laptop |
+| **3 Jamming → degraded → resync** | Scenario `jam` → linkshaper drops `mavlink:drone2` and `tak:*` → MAVLink: `degraded` after 1.5 s of silence, `lost` at `COM_DL_LOSS_T` → PX4/Mock run `NAV_DLL_ACT`=Return → HUD greys D2, "D2 LINK LOST · RTL 0:12", D2 proposals invalidated, holds for D2 are not queued → TAK `LinkMonitor` sees no pong for 3 s → `lost` → outbox queues → window ends → pong returns → `ok` → outbox replays the lookback window, then the queue, then the latest live-track states, in order with original `time`, dropping expired events | TAK `lost` ≤3 s; `ok` ≤2 s after the window; order 100% on the router log |
 
-**Glasses↔companion loss** is separate: the glasses keep the last snapshot, grey it after 3 s and show "COMPANION LOST — LOCAL ONLY" with a live tape; the companion expires any pending proposal; reconnect is `sys.hello` then a full snapshot. Commands never queue across disconnects.
+**Glasses↔companion loss:**
+- The glasses keep the last snapshot and grey it after 3 s, with "COMPANION LOST — LOCAL ONLY" and a live tape.
+- The companion expires the pending proposal.
+- On reconnect: `sys.hello`, then a snapshot.
+- Commands never queue across a disconnect.
 
 ---
 
 ## 2. Interfaces
 
-### 2.1 Conventions
-- **Time:** `ts_ms` is Unix epoch milliseconds on the sender's clock, and the companion clock is authoritative. Sim time travels separately as `t_sim_ms`. Glasses↔companion offset is estimated by min-RTT/2 over `sys.ping`. Every companion timer uses an injected `Clock`, so timeouts scale correctly under `--speed`.
-- **Geo:** WGS-84 lat/lon in decimal degrees. `alt_msl_m`, `alt_agl_m`, and `hae_m` (CoT only). Bearings and headings are degrees true, 0–360 clockwise. Speeds in m/s. Sim internals use ENU metres from the scenario origin. **MGRS is used for display and voice only** (it truncates), via one `edith_common.geo` module ([sim §1.7](council/r1/sim.md)). Units are metric throughout (L2).
-- **Versioning:** JSON Schema 2020-12 files in `schemas/v1/` are the source of truth. Python (pydantic) and Kotlin (kotlinx.serialization) models are hand-written and checked against shared fixtures (C27). Additive fields are minor and must be ignored by older readers. A breaking change bumps `v`.
+Full tables are in [spec/interfaces.md](spec/interfaces.md). The binding points:
 
-### 2.2 Envelope and binary frames
-
-```json
-{ "v": 1, "type": "hud.state", "id": "uuid4", "ts_ms": 1795000000000,
-  "src": "companion-01", "seq": 4182, "body": { } }
-```
-`seq` is monotonic per sender. Binary WS frame layout: `[u32 big-endian header_len][UTF-8 JSON header][payload]`. Header fields: `{stream: "audio.up"|"video.down/<asset_id>"|"video.crop/<alert_id>"|"video.up"|"audio.down", seq, ts_ms, codec: "pcm_s16le"|"jpeg"|"h264", w?, h?, sr?, ch?, frame_id?}`.
-
-### 2.3 Message types (WS :7400)
-
-| Type | Dir | Rate | Body (fields: type, unit) |
-|---|---|---|---|
-| `sys.hello` | ↔ | on connect | `role: glasses\|emulator\|fake`, `proto: [int]`, `token: str` (per-run pairing), `device{model, fingerprint, sdk_int}`, `display{eye_w:640, eye_h:480, eyes: sbs\|mono}`, `input{ptt: hold\|toggle}`, `caps{inference:[companion\|glasses\|offload], camera: bool, tts: bool}` |
-| `sys.ping` / `sys.pong` | ↔ | 1 Hz | `t0_ms`, `t1_ms`, `t2_ms` |
-| `head.pose` | ↑ | 10 Hz | `yaw_deg, pitch_deg, roll_deg, heading_deg, heading_unc_deg, source: rv\|fused\|game_rv\|scripted` |
-| `input.event` | ↑ | event | `kind: tap\|double_tap\|triple_tap\|slide_fwd\|slide_back\|slide_up\|slide_down\|ptt_down\|ptt_up\|two_finger_hold\|two_finger_tap\|back`, `t_mono_ms`, `duration_ms?`, `ctx{proposal_id?, alert_id?}` (what was on screen at the time) |
-| `voice.session.start` / `.stop` | ↑ | event | `session_id, trigger: ptt\|touch\|text`, `reason?` |
-| `voice.text` | ↑ | event | `session_id, text`. Test and emulator injection only; accepted only when `--allow-text-injection` is set |
-| `voice.partial` / `voice.final` | ↓ | ≤5 Hz | `session_id, text, conf?` |
-| `hud.state` | ↓ | on change ≤10 Hz + 2 Hz heartbeat | `HudState` (§2.4) |
-| `hud.event` | ↑ | event | `kind: inset_open\|inset_close\|alert_shown\|alert_cleared\|card_shown\|card_cleared, ref, ts_ms` (required for AFS) |
-| `glasses.telemetry` | ↑ | 1 Hz | `battery_pct, current_ua, voltage_mv, temp_c, thermal_status: int, thermal_headroom: float, fps, decode_ms_p95, rtt_ms` |
-| `perception.detections` | ↑ | per frame | `[Detection]` (glasses placement, benchmark only) |
-| binary `audio.up` | ↑ | 50 frames/s during PTT only | pcm_s16le, 16 kHz, mono, 20 ms = 640 B |
-| binary `video.down/<asset>` | ↓ | 10–15 fps while inset visible | JPEG 320×240 q≈70 (~1.5–2.5 Mbit/s); boxes are **not** burned in |
-| binary `video.crop/<alert>` | ↓ | per alert | JPEG 96×72 |
-| binary `video.up` | ↑ | ≤10 fps (bench) | JPEG 640×480 |
-| binary `audio.down` | ↓ | TTS (P2) | pcm_s16le 16 kHz |
-
-Glasses send **raw input events**. The companion maps them to actions using the displayed `ctx`, so a stale tap cannot confirm a newer card (C15).
-
-### 2.4 Core schemas
-
-```
-AssetState     asset_id: str, callsign: str ("DRONE 1"), chip: str ("D1"), kind: quad|fixed_wing|vtol|ugs,
-               link{state: ok|degraded|lost, last_heard_ms: int}, pos{lat, lon, alt_msl_m, alt_agl_m},
-               att{roll_deg, pitch_deg, yaw_deg}, vel_ned{n_mps, e_mps, d_mps}, battery_pct: float,
-               mode: str (PX4 mode name), armed: bool, landed: bool,
-               failsafe{dll_action: hold|return|land|none, dll_countdown_s?: float},
-               task{proposal_id?, verb?, status?}, sensors[{sensor_id, kind: eo|ir, hfov_deg, w, h, stream: url}]
-FrameMeta      (UDP 5700+i sidecar) frame_id: int, pts: int, t_capture_ms, t_sim_ms, asset_id,
-               pose{lat, lon, alt_msl_m, alt_agl_m}, att{roll_deg, pitch_deg, yaw_deg},
-               gimbal{pitch_deg, yaw_deg}, K{fx, fy, cx, cy}, w, h          # pose AT EXPOSURE
-Detection      det_id, frame_id, frame_ts_ms, source{asset_id, sensor_id}, cls: person|vehicle|other,
-               conf: 0..1, bbox_norm[x, y, w, h], tile?: int,
-               infer{placement: companion|glasses|offload, model, model_sha, t_capture_ms, t_start_ms, t_end_ms}
-Track          track_id ("contact 3" speakable alias: alias), cls, conf, hits: int, window: int,
-               geo{lat, lon, ce_m}, vel{e_mps, n_mps}?, first_seen_ms, last_seen_ms, source_assets[str],
-               status: new|confirmed|watched|marked|dismissed|lost, novelty: 0..1,
-               affiliation: unknown|friend|neutral|hostile, affiliation_src: machine|human,  # machine ⇒ unknown (invariant)
-               det_ids[-8:]
-Alert          alert_id, tier: advisory|caution|warning, score: 0..1, kind: new_contact|contact_close|
-               link_lost|battery_low|geofence|teammate_stale|task_status, label ("VEHICLE"),
-               ref{track_id|asset_id|uid}, bearing_deg, range_m, ce_m?, row2, actions[watch|mark|dismiss|say_again|details],
-               signals{conf, novelty, proximity, closing, recency, class_w, aoi}, created_ms, expires_ms
-CommandIntent  intent_id, session_id, utterance{text, asr_conf, nbest[{text, conf}], engine, model_sha},
-               heading_snapshot_deg, operator_pos{lat, lon},
-               parsed{kind: command|safety_stop|response|query|hud, verb?, asset_ref?: str|"all",
-                      target?{kind: self|clock_range|grid|named|relative|track|area, clock?, range_m?, mgrs?, name?,
-                              track_alias?, offset{dir, dist_m}?, size_m?},
-                      params{alt_agl_m?, radius_m?, standoff_m?}},
-               slots[{name, raw_tokens, value, conf}], parser{method: grammar|llm, conf},
-               result: ok|say_again|rejected, reject_reason?
-CommandProposal proposal_id, intent_id, asset_id, steps[{verb, params}] (e.g. [takeoff, search] when landed),
-               resolved_target{lat, lon, alt_agl_m, mgrs, label}, readback{text, spoken},
-               checks[{name, pass: bool, msg}], confirm_with[voice|touch_temple|touch_companion],
-               nonce (companion-internal; never sent to glasses), created_ms, lockout_until_ms, expires_ms,
-               state: proposed|await_confirm|confirmed|dispatched|cancelled|expired|superseded|invalidated
-Confirmation   proposal_id, nonce, method: voice|touch_temple|touch_companion, operator_id, ts_ms,
-               asr{text, conf, closed_grammar_agree: bool}?
-SafetyStop     stop_id, scope: all|<asset_id>, source: voice|temple|companion, ts_ms, asset_ids[]
-Execution      exec_id, proposal_id|null (null ⇒ safety stop), stop_id?, asset_id, verb,
-               status: sent|accepted|rejected|in_progress|completed|failed|aborted, mav_result?: int, detail, ts_ms
-Feedback       track_id, verb: watch|mark|dismiss|say_again|details|reclassify, affiliation?, operator_id, method, ts_ms
-TeammatePosition uid, callsign, team, role, pos{lat, lon, hae_m}, course_deg, speed_mps, ts_ms, stale_ms, source: mesh|server|sim
-HudState       seq, ts_ms, mode: day|night, declutter: full|min|warn, quiet: bool,
-               operator{lat, lon, heading_deg, heading_unc_deg},
-               status{tak: ok|degraded|lost|off, gps: ok|sim|none, companion_battery_pct, data_age_ms, rec: bool},
-               assets[{asset_id, chip, mode_label, battery_pct, link, task_label, dll_countdown_s?}],
-               minimap{range_m, entities[{ref, kind: self|friend|own_drone|unknown|hostile|point, rel_e_m, rel_n_m,
-                       heading_deg?, label?, age_ms, stale: bool}], clusters[{rel_e_m, rel_n_m, count}]},
-               tape{carets[{ref, bearing_deg, style}]},
-               alert?{alert_id, tier, label, bearing_deg, range_m, row2, row3, shown_since_ms, flash_until_ms,
-                      queue{count, warning, caution, advisory}},
-               proposal?{proposal_id, rows[str], expires_ms, lockout_until_ms, hint, state},
-               toast?{text, tier, until_ms},
-               inset?{stream, label, frame_age_ms, pinned: bool, boxes[{alias, cls, bbox_norm}], crop_stream?},
-               voice{state: idle|listening|processing|readback|await_confirm|say_again|muted|offline, partial?, last_heard?}
-```
-
-Glasses-side composition: banner row 1 is built on the glasses as `label · <clock from bearing_deg − live heading> · ~<range rounded to max(50 m, ce_m)>` so it updates at the head-pose rate. Rows 2 and 3 come from the companion ([hud §1.5](council/r1/hud.md)).
-
-**Structural verb allowlist** ([architect §1.3](council/r1/architect.md)): `takeoff, goto, orbit, observe, search, follow, hold, rtl, land`. No enum value, field or adapter method exists for weapons, payload release or countermeasures. `follow` exists in the schema but is a stretch goal (L8).
-
-### 2.5 Ports and rates
-
-| Port | Proto | Use |
-|---|---|---|
-| 7400 | TCP/WS | Glasses, emulator and fake_glasses ↔ companion (`/v1/ws`) |
-| 7401 | TCP/HTTP | `/healthz`, `/metrics`, god-view `/`, touch fallback `/ui/touch` |
-| 14540+i | UDP | PX4 instance *i* API link (PX4 binds 14580+i) [probed] |
-| 14740+i | UDP | Companion MAVLink endpoint behind linkshaper (always in path; pass-through by default) |
-| 14550 / 18570+i | UDP | GCS link. QGC must not run unless routed through linkshaper ([sim §1.5](council/r1/sim.md)) |
-| 19410+i | UDP | SIH viewer (optional jMAVSim display) |
-| 5600+i | UDP/RTP | Drone video H.264 (all tiers) |
-| 5700+i | UDP | FrameMeta sidecar JSON |
-| 239.2.3.1:6969 | UDP mcast | CoT mesh SA (default, L7) |
-| 8087 / 8089 / 8080 | TCP | TAK server plaintext / TLS (Phase 1) / OTS web UI (optional) |
-| 18087 | TCP | In-repo fake CoT router (tests only) |
-| 5353 | mDNS | `_edith._tcp` discovery |
-
-| Stream | Rate |
-|---|---|
-| MAVLink telemetry in | `GLOBAL_POSITION_INT`, `ATTITUDE` 10 Hz; `SYS_STATUS`/`BATTERY_STATUS` 1 Hz; `HEARTBEAT` 1 Hz |
-| Companion GCS `HEARTBEAT` out | 1 Hz, `MAV_TYPE_GCS`. **Required**: PX4's data-link-loss failsafe watches it |
-| Camera out | 1280×720 @ 15 fps in this workspace, 30 fps on laptops (C32) |
-| Detector | 2 Hz/feed default, 4 Hz tasked, 1 Hz idle |
-| CoT out | Self PLI every 10 s (stale 120 s); drones 1 Hz (stale 30 s); unknown contacts ≤1 Hz and ≥ every 30 s while live (stale 300 s); SPI 1 Hz (stale 10 s); human marks (stale 900 s) |
-
-### 2.6 Asset primitives (`AssetAdapter` → MAVLink; pymavlink 2.4.50 primary, C01)
-
-`AssetAdapter`: `connect()`, `telemetry() -> AsyncIterator[AssetState]`, `arm()`, `takeoff(alt_agl_m)`, `goto(lat, lon, alt_agl_m)`, `orbit(lat, lon, radius_m, alt_agl_m, vel_mps)`, `search(polygon, alt_agl_m, overlap)`, `follow(track_stream, standoff_m)` (P2), `hold()`, `rtl()`, `land()`, `upload_fence(polygon, alt_max_m)`. There is deliberately no generic `send_command`. MockVehicle implements the same MAVLink subset.
-
-| Verb | MAVLink (PX4) [sim §1.3] | MAVSDK equivalent (only if the team switches, C01) |
-|---|---|---|
-| arm | `COMMAND_LONG` 400 `COMPONENT_ARM_DISARM` p1=1 | `action.arm` |
-| takeoff | 22 `NAV_TAKEOFF` (p7 = AMSL) | `action.set_takeoff_altitude` + `action.takeoff` |
-| goto | `COMMAND_INT` 192 `DO_REPOSITION` (p2=1, x/y = lat/lon·1e7, z AMSL); vehicle ends in Hold | `action.goto_location` |
-| orbit, observe(point) | `COMMAND_INT` 34 `DO_ORBIT` (radius, velocity, yaw-to-center, center, alt) | `action.do_orbit` |
-| search(area) | Companion builds a lawnmower; spacing = footprint width × (1 − 0.3); `MISSION_COUNT`/`MISSION_ITEM_INT`(16)/`MISSION_START`(300) | `mission_raw.upload_mission` + `start_mission` |
-| observe/follow(track) | Re-issue `DO_ORBIT`/`DO_REPOSITION` ≤1 Hz on the track estimate at standoff ≥30 m. Never PX4 Follow-Me. | same |
-| hold (safety stop) | 176 `DO_SET_MODE` custom main 4 / sub 3 (AUTO.LOITER) | `action.hold` |
-| rtl / land | 20 `NAV_RETURN_TO_LAUNCH` / 21 `NAV_LAND` | `action.return_to_launch` / `action.land` |
-| speed | 178 `DO_CHANGE_SPEED` | `action.set_current_speed` |
-| geofence | `MISSION_TYPE_FENCE` polygon upload, also enforced in the companion | `geofence.upload_geofence` |
-
-MAVSDK method names are the 3.x gRPC plugin names; their 4.x ctypes equivalents are UNVERIFIED ([sim §1.3](council/r1/sim.md) found that 4.x is a rewrite). PX4 parameters per scenario: `NAV_DLL_ACT=2` (Return), `COM_DL_LOSS_T=20`. Enum values are UNVERIFIED and must be checked against the v1.18 parameter reference.
-
-### 2.7 CoT type table (TAK Protocol v0 XML; `version="2.0"`)
-
-| Entity | `type` | `how` | Rate / stale | Notes |
-|---|---|---|---|---|
-| Self (wearer) | `a-f-G-U-C` | `m-g` | 10 s / 120 s | Callsign RAVEN 1; `__group` |
-| Teammates (sim) | `a-f-G-U-C` | `m-g` | 10 s / 120 s | RAVEN 2–4 |
-| Own quadcopter | `a-f-A-M-H-Q` | `m-g` | 1 Hz / 30 s | `a-f-A-M-F-Q` if fixed-wing |
-| Machine-detected vehicle | `a-u-G-E-V` | machine code UNVERIFIED (default `m-g`; pick at the week-1 ATAK check) | ≤1 Hz / 300 s | `remarks`: "VEHICLE · machine · unconfirmed · D2 · conf 0.81"; `link` to parent drone uid; honest `ce`; `le=9999999` |
-| Machine-detected person | `a-u-G` | same | ≤1 Hz / 300 s | remarks "PERSON". **Never a unit type.** |
-| Unknown air (drone class, later) | `a-u-A` | same | / 120 s | Not in Phase 0 classes (C16) |
-| Human MARK | same `a-u-*` | `h-e` | / 900 s | remarks "marked by RAVEN 1" |
-| Human reclassify (companion UI only) | `a-h-*` / `a-n-*` / `a-f-*` | `h-e` | / 900 s | Only path to non-unknown affiliation |
-| Camera SPI | `b-m-p-s-p-i` | `m-g` | 1 Hz / 10 s | ATAK rendering UNVERIFIED |
-| NAI / checkpoint | `b-m-p-w` (UNVERIFIED) | `h-e` | long | From the scenario gazetteer |
-
-**Scope guard** (in `tak/`, the *only* CoT egress): it refuses any `a-h-*` whose `Track.affiliation_src` is not `human` and any type outside this table, and logs every refusal. `<detail>` carries `contact@callsign`, `__group@name/role`, `track@course/speed`, `remarks`, `link`, and an `<edith v="1" track_id=… asset_id=…/>` extension ([defense_sme §1.3](council/r1/defense_sme.md)).
+- **Clock (C61).**
+  - The supervisor exports `EDITH_T0_NS` and `EDITH_SPEED`, and every process uses `ScaledClock`.
+  - `--assets px4` forces `--speed 1`.
+  - Only durations (`held_ms`, `duration_ms`, `expires_in_ms`) cross the glasses link. Clocks are never compared.
+- **Geo.**
+  - WGS-84; MGRS for display and voice only; metric units (L2).
+  - `hae = MSL + N` (site constant; EGM96, UNVERIFIED).
+  - `ce_m` is always **CE90**, with σ = ce_m/2.146; CoT `ce` = ce_m (C57).
+- **Schema.**
+  - JSON Schema 2020-12 in `schemas/v1/` is the source of truth.
+  - Pydantic and kotlinx models are hand-written and contract-tested on shared fixtures (C27).
+- **Schema changes in v2 (C64):**
+  - `CommandProposal.state` ends at `dispatched`. After that, one `Execution{step_idx}` per step carries the lifecycle.
+  - `HudState.proposal.state` adds `lockout|sent|acked|no_ack|not_sent_timeout`.
+  - `HudState` also gains `alert.ce_m`, `alert.gesture_dismiss`, `entities[].marked`, the enum `carets[].style` and `undo`.
+  - `Track` gains `assoc_friend_uid`, `geo_quality` and `cot_uid`.
+  - `input.event` gains `gesture_seq`, `held_ms` and `pointer_count`, plus the BT PTT kinds.
+  - `FrameMeta` carries `pose_est` and `gimbal.mode`.
+  - `FrameTruth` is sim-internal.
+- **Ports.** The spec gives a bind/send table for every port (C77). New ports:
+  - 5800+i: gt/offload Detections.
+  - 14640+i: truth tap.
+  - 16968/16969: mesh-emu.
+  - 18088: router fan-out.
+  - 14550 must be free (`doctor` fails otherwise).
+  - Linkshaper binds 14540+i, the vehicle binds 14580+i, and the companion `udpin`s 14740+i with sysid 245.
+- **Structural verb allowlist:** `takeoff, goto, orbit, observe, search, follow, hold, rtl, land`. No field, enum or adapter method exists for weapons, payload release or countermeasures.
+  - `follow` takes only a friendly uid stream (C51) and is a stretch goal (L8).
+  - `observe contact` uses the position frozen at confirm (L16).
+- **Outbound classifier (C50).** Every adapter message is MOTION, SAFE or CONFIG; anything else is dropped.
+  - MOTION: arm, takeoff, reposition, orbit, mission upload/clear/start, rtl, land, speed, any mode ≠ LOITER. It needs a dispatched, validly confirmed proposal that postdates any stop on that asset.
+  - SAFE: LOITER hold.
+  - CONFIG: heartbeat and message intervals any time; params and fence only while disarmed.
+- **CoT.**
+  - Machine contacts: `a-u-G-E-V` / `a-u-G`, `how=m-f` (UNVERIFIED), uid `EDITH-<companion>-trk-<id>`.
+  - DISMISS or loss emits `t-x-d-d` + `__forcedelete` within 1 s (fallback: `stale=now`) (C53).
+  - Friend-associated tracks are never published (C52).
+  - Sim teammates are VIKING 1-2…1-4 with `how=m-s` and `EXERCISE` remarks (C55).
+  - Inbound accepts XML and TAK Protocol v1 via `takproto`.
 
 ---
 
@@ -252,533 +154,448 @@ MAVSDK method names are the 3.x gRPC plugin names; their 4.x ctypes equivalents 
 
 ### 3.1 Companion modules (`companion/edith_companion/`)
 
-| Module | Responsibility | Key interfaces |
+| Module | Owner WS | Responsibility |
 |---|---|---|
-| `gateway` | aiohttp WS :7400 + HTTP :7401; hello/token; snapshot push; binary demux | `Session`, `publish(msg)` |
-| `bus` | In-process asyncio pub/sub; every message passes through `eventlog` | `Bus.subscribe(type)` |
-| `eventlog` | Append-only SQLite (WAL) of every envelope and FSM transition; also the audit log (audio sha256, n-best, model hashes) | `EventLog.append`, replay |
-| `world` | Assets, tracks, teammates, operator pose, gazetteer, AO/geofence | `World` snapshot |
-| `voice` | VAD, `AsrEngine` (pluggable), confirm recognizer | `AsrEngine.stream(frames) -> partials/final` |
-| `intent` | Normalizer, Lark grammar, resolver, read-back generator | `parse(text, ctx) -> CommandIntent` |
-| `safety` | Gate checks, safety-stop path, proposal FSM, invariant monitor | `propose()`, `confirm()`, `stop()` |
-| `assets` | `AssetAdapter` (pymavlink PX4 / MockVehicle), GCS heartbeat, telemetry→`AssetState` | §2.6 |
-| `perception` | FrameSource, scheduler, detectors, tracker, geo, fusion | §3.5 |
-| `alerts` | Alert generation and ranking, suppression, flood control | `Ranker.top()` |
-| `hud` | Projects world + alerts + proposal + voice → `HudState`; inset policy; declutter/night | `project() -> HudState` |
-| `tak` | CoT build/parse, scope guard, transports (mesh/TCP via PyTAK), outbox, inbound merge | `CotOut.send(evt)` |
-| `config` | YAML: thresholds, ranker weights, safety limits, vocabulary | one file, versioned |
+| `gateway`, `bus`, `eventlog`, `world`, `config` | B | aiohttp WS :7400 + HTTP :7401 (`/ui/touch`); pub/sub; append-only SQLite audit log; world snapshot; one YAML config |
+| `assets` | B | pymavlink `AssetAdapter`, `outbound.py` classifier, GCS heartbeat, MAVLink link monitor, params-after-boot with read-back |
+| `voice`, `intent` | C | VAD, `AsrEngine`, normalizer profiles, Lark grammar, resolver, read-back rows |
+| `safety` | C | Gate, proposal FSM, `confirm_rule.py` (the only home of the confirm predicate, C85), safety stop with task cancellation, invariant monitor |
+| `perception` | E | FrameSource (RTP + SEI), OffloadDetector (5800+i), scheduler, detectors, ground-plane tracker, geo, fusion, novelty, friendly association, inset encoder |
+| `alerts`, `hud` | H | Ranking, suppression, budget, card-open queueing, bare-response scoping; `HudState` projection, inset policy, declutter/night |
+| `tak` | F | CoT build/parse, scope guard, transports (mesh, mesh-emu, tcp), LinkMonitor, outbox, retraction, inbound merge |
 
 ### 3.2 Voice pipeline
 
-| Stage | Choice | Notes |
-|---|---|---|
-| Activation | **PTT only** (hold right temple; toggle fallback with 8 s cap if T7 fails; companion button). No wake word in Phase 0 (C35) | Porcupine's free tier ended 30 Jun 2026; openWakeWord models are NC ([voice §1.1](council/r1/voice.md)) |
-| Capture | 16 kHz mono PCM16, 20 ms frames. RayNeo `audio_source_record=…` voice mode (exact string UNVERIFIED), with Android `VOICE_RECOGNITION` as fallback | Mic muted while `audio.down` plays |
-| VAD | Energy trim in P0. Silero VAD (MIT) ONNX via onnxruntime in P1 | PTT already bounds speech |
-| ASR | `AsrEngine` interface. **Primary candidate: Moonshine Small Streaming (MIT)**; biased fallback: **sherpa-onnx streaming zipformer + hotwords** (Apache-2.0). Whichever installs cleanly on Py 3.13 is integrated first; the W3 bake-off picks the winner (C18) | Vendor numbers: Moonshine Small 165 ms / 7.84% WER on Linux x86 ([voice §1.3](council/r1/voice.md)) |
-| Hotwords | Call signs, NATO alphabet, digits + NINER, prowords, verbs, gazetteer names, contact aliases | Generated from config and world |
-| Confirm recognizer | Open ASR "confirm" alone, conf ≥ τ_confirm (0.80 start). In P1, AND Vosk `small-en-us-0.15` closed grammar `["confirm","cancel","say again","[unk]"]` | Two-engine agreement |
-| Parse | Normalizer → Lark Earley grammar (§3.3) → resolver | Deterministic; fully unit-tested |
-| LLM | Deferred to S2 stretch. If used: Qwen2.5-0.5B/1.5B GGUF, GBNF-constrained to canonical text, **re-parsed by the same grammar**, with a grounding check (C20) | Never required; cloud only as a benchmark |
-| Read-back | HUD card text is primary. TTS is optional, default off (P2; sherpa-onnx Piper with a permissively licensed voice, not Lessac) (C19) | |
-
-Latency budget (end-of-speech → card): PTT tail + last frame 200 ms, ASR finalize 250 ms, parse + gate 30 ms, render ≈20 ms → **≈500 ms p50, ≤1.5 s p95** ([voice §1.7](council/r1/voice.md)).
-
-### 3.3 Command grammar (Phase 0, v1)
-
-```
-utterance   := safety_stop | command | response | query | hud_cmd
-safety_stop := [ "all" ("drones"|"assets") ] stop_word          # scope = all
-             | callsign stop_word                                # scope = that asset
-stop_word   := "hold" | "abort" | "stop"
-command     := callsign verb_phrase
-callsign    := "drone" ("one"|"two"|"three"|"four"|DIGIT)        # D1..D4; no broadcast tasking in Phase 0
-verb_phrase := ("take off"|"launch") [ "to" distance ]                         -> takeoff(alt)
-             | ("go to"|"move to") location [alt_mod]                          -> goto
-             | ("orbit"|"circle") location [radius_mod] [alt_mod]             -> orbit
-             | ("watch"|"overwatch"|"observe"|"look at") (location|contact) [radius_mod] [alt_mod] -> observe
-             | ("search"|"scout"|"scan") area [alt_mod]                        -> search
-             | "follow" contact [ "standoff" distance ]                        -> follow   (stretch, L8)
-             | ("return"|"r t b"|"come home") ["home"]                          -> rtl      (needs confirm)
-             | "land"                                                          -> land     (needs confirm)
-location    := "my position" | clock_range | grid | named | relative
-clock_range := CLOCK "o'clock" [","] distance                    # relative to heading snapshot at PTT release
-grid        := ["grid"] [ GZD SQUARE ] DIGITS{4|6|8|10}          # GZD+square preloaded (16T CK)
-named       := ("n a i"|"nai") NUM | ("checkpoint"|"c p") NUM | "waypoint" NATO | GAZETTEER_NAME
-relative    := distance CARDINAL "of" named
-area        := named | grid [ "size" distance ]                  # default square 300 m
-contact     := "contact" NUM | "the" ("vehicle"|"person")        # only if unique
-radius_mod  := "radius" distance                                 # 30–300 m
-alt_mod     := "altitude" distance                               # 30–120 m AGL
-distance    := NUMBER [ "meters"|"metres"|"m"|"k"|"kilometers" ] # default unit metres
-response    := "confirm" | "cancel" | "watch" | "mark" | "dismiss" | "say again" | "details"
-query       := [callsign] "status"
-hud_cmd     := "show" callsign | "hide feed" | "map" ("two fifty"|"five hundred"|"one k"|"two k")
-             | "declutter" | "night mode" | "day mode" | "brighter" | "dimmer"
-```
-
-The normalizer maps `niner→9`, `fife→5`, `tree→3`, NATO letters, digit strings ("four zero zero" → 400) and compounds ("one point five k" → 1500). Mixed number styles are **rejected, never guessed**. Unknown verbs ("attack", "engage", "fire", "drop") return `REJECTED: "Unsupported command"`, and nothing is sent. "Track" is not a spoken verb (L3).
-
-Bare `watch` is an alert response: it pins the contact and moves nothing. `drone two watch contact one` is an asset command and needs confirmation (C03).
-
-| Utterance | Result |
+| Stage | Choice |
 |---|---|
-| "drone one scout NAI one" (D1 landed) | Proposal: `DRONE 1 → LAUNCH + SEARCH NAI 1 · 16T CK 6142 3705 · 300 m sq · ALT 60 m` (C09) |
-| "drone two overwatch my position radius one five zero" | Proposal: observe(self) = orbit at operator, R 150 m |
-| "drone two orbit two o'clock four hundred" | Proposal: resolved to BRG 062 / 400 m → MGRS, absolute in the read-back |
-| "drone one orbit grid six one four two three seven zero five" | Proposal; read-back digit by digit, pin on the mini-map |
-| "abort" / "all drones hold" / triple-tap | **Immediate** hold for all airborne assets; pending proposal cancelled; toast "ALL HOLD" |
-| "drone two return" | Proposal (RTL needs confirmation, L1) |
-| "drone one attack the vehicle" | REJECTED "Unsupported command"; 0 MAVLink commands |
-| "drone two orbit grid six one four two three seven" (odd digit count) | SAY_AGAIN on the grid slot |
-| "watch" (alert shown) | Feedback watch; inset pinned; no motion |
+| Activation | **PTT only** (C35). Right-temple hold ≥300 ms **with a 500 ms pre-roll from finger DOWN** (C46). Toggle fallback (confirmed single tap, 8 s cap) if T7 shows the system owns long-press. BT HID PTT key for the study. Companion button |
+| Capture | 16 kHz mono PCM16, 20 ms frames. RayNeo `audio_source_record` voice mode (string UNVERIFIED), with `VOICE_RECOGNITION` as fallback. SDK click sound off while armed |
+| ASR | `AsrEngine`. **Moonshine Small Streaming via `moonshine-voice==0.1.6` is integrated first** ([probed]: installs on Py 3.13; finalize 133–174 ms). `sherpa-onnx==2.0.3` zipformer + hotwords is the biased alternative. The W3 bake-off picks the winner (C18). Moonshine has no Intel-macOS wheel, and `doctor` says so (C68) |
+| Normalizer | Per-engine profile: `spoken` or `written` (C66); gazetteer aliases ([voice §1](spec/voice.md#1-normalizer-profiles-c66)) |
+| Parse | Lark grammar v2 ([voice §2](spec/voice.md#2-grammar-v2-lark-earley)) with stop token spotting (C49) and the extended rejected lexicon (C66) |
+| Confirm | Exact normalized `confirm` from the open ASR, after `card_shown` and outside lockout, with no confidence threshold where the engine has none. P1 adds AND-agreement from `vosk==0.3.45`'s closed grammar **with decoys** (C48) |
+| Partials | ≤2 Hz (each Moonshine partial costs ~230 ms of CPU [probed]) |
+| LLM | Deferred to a semester-2 stretch, GBNF-constrained and re-parsed (C20) |
+| TTS | Off by default (C19). Never the `piper-tts` package (GPL) |
+
+Latency budget (end of speech → card): 150 ms tail + ASR final ≈170 ms + parse/gate 30 ms + render ≈20 ms ≈ **400–500 ms p50, ≤1.5 s p95**. D10a measures it both idle and under `edith up`.
+
+### 3.3 Grammar summary
+
+The grammar is in [voice §2](spec/voice.md#2-grammar-v2-lark-earley).
+
+- **Callsigns:** D1–D4. There is no broadcast tasking.
+- **Verbs:** take off/launch, go to, orbit, watch/overwatch/observe (point or frozen contact), search/scout/scan, follow (me/teammate; stretch), return, land.
+- **Locations:** my position, teammate, clock+range, grid, named (with aliases), relative.
+- **Stops:** `[all [drones] | callsign] stop_word+ [position]`, plus token spotting.
+- **Bare responses:** apply only to the displayed alert. Bare `watch` moves nothing (C03).
+- **Rejected:** out-of-scope verbs (the C66 lexicon) return `REJECTED: "Unsupported command"`, and nothing is sent.
 
 ### 3.4 Safety state machine
 
 ```
-Voice session:  IDLE ─ptt_down→ LISTENING ─ptt_up+150ms→ PROCESSING ─→ one of:
-                 PROPOSED | SAY_AGAIN(≤2 per slot, then "use touch") | REJECTED | STOP_EXECUTED | RESPONSE_APPLIED | NOOP
-Proposal:       PROPOSED ─lockout(max(600 ms, TTS end))→ AWAIT_CONFIRM ─valid Confirmation→ CONFIRMED
-                 ─gate re-check pass→ DISPATCHED ─ACK→ IN_PROGRESS → COMPLETED | FAILED | ABORTED
-   exits from PROPOSED/AWAIT_CONFIRM: CANCELLED (cancel word | double-tap | companion) · EXPIRED (10 s) ·
-   SUPERSEDED (new command or safety stop) · INVALIDATED (WARNING alert | glasses link drop | asset link lost | gate fail)
-Safety stop:    any state ─HOLD/ABORT/STOP | triple-tap | companion HOLD ALL→ hold() on scoped airborne assets (≤500 ms)
+Voice:     IDLE ─ptt_down→ LISTENING ─ptt_up+150ms→ PROCESSING → PROPOSED | SAY_AGAIN(≤2/slot) | REJECTED |
+           STOP_EXECUTED | RESPONSE_APPLIED | NOOP
+Proposal:  PROPOSED ─card_shown + 600 ms→ AWAIT_CONFIRM ─valid Confirmation→ CONFIRMED ─gate re-check→ DISPATCHED
+           (then Execution per step: sent → accepted → in_progress → completed|failed|aborted)
+  exits: CANCELLED (cancel | double-tap held 400 ms | companion) · EXPIRED (ptt_up not received by 10 s after card_shown) ·
+         SUPERSEDED (new command | stop) · INVALIDATED (WARNING | glasses drop | asset link lost | gate fail)
+Stop:      any state → cancel adapter repeating tasks + retries for scope → hold() to scoped airborne assets with link ≠ lost
+           (lost → "D2 HOLD NOT SENT · LINK", never queued) ≤500 ms
 ```
 
-A **valid Confirmation** matches the live `proposal_id` and nonce, arrives after `lockout_until_ms` and before `expires_ms`, and is one of: voice "confirm" as the whole utterance in a press that started after the card appeared, with conf ≥ τ (plus closed-grammar agreement in P1); a temple two-finger hold ≥1 s whose `ctx.proposal_id` matches; or a companion `/ui/touch` hold ≥1 s. "Yes", "okay" and "roger" never confirm; anything ambiguous counts as cancel. Gate checks run at proposal time and again before dispatch:
+- **Valid confirmation.** Defined once in `safety/confirm_rule.py`. The rule and the press-outcome table are in [voice §5](spec/voice.md#5-confirmation-c48-single-owner-companionedith_companionsafetyconfirm_rulepy).
+- **Gate checks.** These run at proposal time and again before dispatch:
+  - inside the AO and geofence;
+  - 30–120 m AGL (default 60);
+  - ≤1,500 m from home;
+  - battery ≥30% for a new task;
+  - asset link `ok`;
+  - track age <30 s for `observe contact`;
+  - orbit radius 30–300 m;
+  - follow only of a friendly uid with PLI <30 s and standoff ≥30 m;
+  - the verb is valid in the current state (landed ⇒ compose takeoff, C09).
 
-| Check | Limit |
+**Invariants.** Each is checked by Hypothesis property tests and by a runtime monitor that raises a WARNING and logs on violation. Wire-level invariants are checked against the linkshaper `mavlink_wire.jsonl`, an independent witness.
+
+| ID | Invariant |
 |---|---|
-| Target inside AO polygon / geofence | Scenario `ao` |
-| Altitude band | 30–120 m AGL; default 60 m |
-| Range from home | ≤1,500 m |
-| Battery for new task (not hold/rtl/land) | ≥30% |
-| Asset link | `ok` |
-| Track-referenced target age | <30 s |
-| Orbit radius / follow standoff | 30–300 m / ≥30 m |
-| Verb valid in asset state | e.g. landed ⇒ compose takeoff first |
-
-**Invariants** (Hypothesis property tests + a runtime monitor that raises a WARNING and logs on violation): **I1** no motion-adding MAVLink command (arm, takeoff, reposition, orbit, mission start, rtl, land, speed, any mode other than LOITER) leaves the adapter without a DISPATCHED proposal and matching Confirmation; **I2** the only unconfirmed command is hold; **I3** at most one live proposal; **I4** no command survives a disconnect; **I5** every transition is in the event log; **I6** `affiliation_src=machine ⇒ affiliation=unknown`.
+| I1 | No MOTION message reaches an asset unless it belongs to a DISPATCHED proposal with a valid Confirmation |
+| I2 | Unconfirmed outbound messages are only SAFE or CONFIG (C50) |
+| I3 | At most one live proposal |
+| I4 | No command survives a glasses disconnect |
+| I5 | Every transition is in the event log |
+| I6 | `affiliation_src=machine ⇒ affiliation=unknown` |
+| I7 | After a SafetyStop at t_s on asset *a*, no MOTION reaches *a* unless it comes from a proposal confirmed after t_s. `stop()` cancels follow re-issues, retries and pending uploads before sending the hold (L16) |
+| I8 | A track with `assoc_friend_uid` is never alerted or published (L17) |
 
 ### 3.5 ML pipeline
 
-| Item | Decision ([ml](council/r1/ml.md)) |
+| Item | Decision |
 |---|---|
-| Classes (Phase 0) | `person`, `vehicle` (COCO car/bus/truck/motorcycle). COCO animals → `other`, never alerted. `drone` deferred (C16). No face/ID/re-ID classes, ever. |
-| Companion default | **YOLOX-Tiny @416, Apache-2.0**, 2×2 tiles (15% overlap) on 1280×720, ORT CPU, 1 thread. Measured here: ~250 ms per tiled frame ([probed], ml §0) |
-| Glasses candidate | YOLOX-Nano @416 (or @320) → TFLite fp32/fp16/int8 via onnx2tf |
-| Accuracy tier | D-FINE-N (Apache-2.0), companion only. RT-DETRv2-R18 as offline teacher / auto-labeler |
-| Forbidden | Ultralytics (AGPL-3.0), Lessac voice, NC datasets in shipped artifacts |
-| Thresholds | Detector floor 0.25 (tracker low-conf association 0.10); NMS IoU 0.5 including cross-tile; confirm ≥3 hits / 5 detections and mean conf ≥ τ_c (person 0.30, vehicle 0.35; swept to an operating point frozen at W8) |
-| Tracker | ByteTrack via Roboflow `trackers` (Apache-2.0) if it installs on Py 3.13 without heavy deps; otherwise an in-repo ByteTrack-style IoU+Kalman tracker (C17) |
-| Geolocation | Pixel → ray via K → gimbal → body → NED; intersect the plane at home elevation. Box bottom-center. Reject rays above −5° depression. `ce_m` from first-order propagation (≈4.2 m per 1° attitude error at 60 m AGL, 30° depression) |
-| Fusion | Same class, Mahalanobis on ce₁²+ce₂², \|Δt\|<5 s, inverse-variance merge; `source_assets[]` |
-| Novelty | New if no same-class track within max(15 m, 2·ce) in the last 120 s |
-| Training (S2) | W1–4: fine-tune YOLOX-Tiny/Nano on VisDrone-DET (2-class, sliced 416 tiles; SAHI reports +12.7–14.5 AP). W4–7: 1:1 mix with sim frames. On Colab T4 or a Penn cluster (UNVERIFIED) |
-| Data licenses | VisDrone CC BY-NC-SA 3.0, UAVDT research-only, Okutama no stated license: **research/eval only, fetched by `tools/fetch_data.py` into gitignored `data/` with SHA-256 pins and per-file license records** (L9). Phase 1 must retrain on synthetic + owned data |
+| Classes | `person` and `vehicle`. COCO animals map to `other` and are never alerted. No drone class. No face, ID or re-ID ever (C16) |
+| Companion default | **YOLOX-Tiny (Apache-2.0)** on a 2×2 grid of 692×389 tiles (15% overlap) from 1280×720, ORT CPU, 1 thread. P0 runs the official static 416² ONNX (letterbox scale 0.60). **P1 runs 576×320** exported from the Apache PyTorch weights (scale 0.82; cost UNVERIFIED), with 416² kept as the fallback (C58) |
+| Glasses candidate | YOLOX-Nano → TFLite fp32/fp16/int8 (D14) |
+| Accuracy tier | D-FINE-N companion-only; RT-DETRv2-R18 as offline teacher |
+| Forbidden | Ultralytics (AGPL); NC-derived weights in any APK or wheel (lint, C84) |
+| Thresholds | Output floor 0.10; tracks start at ≥0.25; cross-tile merge by IOS ≥0.5; confirm ≥3 hits in 5 with mean conf ≥ τ_c (person 0.30, vehicle 0.35, swept, frozen at W8) |
+| **Tracker (L19, C56)** | In-repo **ground-plane tracker**: geo-project each detection, constant-velocity Kalman in ENU metres, same class, Mahalanobis d² < 9.21 with σ from ce_m, plus a ByteTrack-style low-confidence second pass. Inset boxes are reprojected through the current FrameMeta. IoU is used only for the cross-tile merge. Roboflow `trackers` is an offline A/B only. Supersedes C17 |
+| Geolocation (C57) | Pixel → ray (K, stabilized gimbal, optical x-right/y-down/z-fwd) → intersect the home-elevation plane; box bottom-centre; reject rays above −5°; h from `relative_alt`. CE90: σ_r = (h/sin²θ)·σ_θ ⊕ σ_h/tanθ ⊕ box term; σ_x = R_slant·σ_ψ; ce_m ≈ 2.146·√((σ_r²+σ_x²)/2). The sidecar carries `pose_est` with nav noise, so CEP is not trivial |
+| Fusion / novelty | Same class, Mahalanobis on combined σ, \|Δt\|<5 s, inverse-variance merge. Novel if no same-class track within max(15 m, ce_m) in 120 s |
+| **Friendly association (L17, C52)** | A `person` track within max(15 m, ce_m) of a friendly PLI fresher than 30 s gets `assoc_friend_uid`: no alert, no CoT, drawn as the friend. Affiliation stays `unknown` (I6) |
+| Scheduler | 2 Hz/feed; 4 Hz tasked; 1 Hz after 30 s with no tracks; 4 Hz for 5 s after any unconfirmed detection; capped at 1 Hz on all feeds while PTT is down (C58) |
+| Training (S2) | VisDrone-DET fine-tune W1–4, sim mix W4–7, on Colab or a Penn cluster (UNVERIFIED). `ml/models.yaml` records `license` and `derived_from` (C84) |
+| Data | VisDrone CC BY-NC-SA, UAVDT research-only, Okutama no stated license: eval and research only, fetched by script with SHA-256 pins into gitignored `data/` (L9, L13) |
 
-**Alert ranking** (C10, C11). Tier wins outright: WARNING > CAUTION > ADVISORY. Within a tier:
-`score = 0.35·proximity + 0.20·closing + 0.15·recency + 0.15·novelty + 0.10·class_w + 0.05·conf`, where
-- proximity = 1 − min(r/1 km, 1)
-- recency = e^(−age/30 s)
-- novelty = 1 for new, 0.3 for a re-alert
-- class_w is set per mission (vehicle 1.0, person 0.8)
-- contacts inside a mission AOI get +0.1 (clamped)
-
-A higher tier pre-empts immediately; within a tier, a new alert pre-empts only if ≥0.2 higher and the current one has been shown ≥3 s. DISMISS suppresses the track plus a 15 m same-class disc for 10 min, unless the tier escalates or range closes ≥30%. More than 3 alerts of a tier within 10 s collapse into one ("3 UNKNOWN · NE · 300–600 m"). Advisories expire at 30 s, cautions at 120 s. Target rate ≤2 alerts/min.
+**Alert ranking** (C10, C11, C81):
+- The tier wins outright.
+- Within a tier: `score = 0.35·proximity + 0.20·closing + 0.15·recency + 0.15·novelty + 0.10·class_w + 0.05·conf`, with +0.1 for an AOI contact.
+- A new alert pre-empts within a tier only if it scores ≥0.2 higher and the current one has been shown ≥3 s.
+- DISMISS suppresses the track plus a 15 m same-class disc for 10 min, unless the tier escalates or the range closes ≥30%.
+- More than 3 alerts of a tier in 10 s collapse into one.
+- **Budget:** ≤2 alerts in any 60 s and ≤20/h mission mean; interviews set the final budget.
 
 | Alert kind | Tier |
 |---|---|
-| new_contact (confirmed track) | CAUTION |
-| contact_close (<150 m from operator) | WARNING |
-| link_lost (asset) | CAUTION |
-| battery_low | CAUTION at 25%, WARNING at 15% |
+| contact_close (<150 m from the operator; `geo_quality=metric` only) | WARNING |
 | geofence breach | WARNING |
-| teammate_stale (>120 s) | ADVISORY |
-| task_status (ack/complete/fail) | ADVISORY (fail = CAUTION) |
+| battery_low | CAUTION at 25%, WARNING at 15% |
+| new_contact | CAUTION |
+| link_lost, tak_link | CAUTION |
+| task_status fail | CAUTION |
+| task_status ack/complete | ADVISORY |
+| teammate_stale | ADVISORY |
 
-A WARNING arriving mid-confirm invalidates the proposal.
+- While a card is open, CAUTION and ADVISORY alerts queue.
+- A WARNING invalidates the card and **cannot be gesture-dismissed** (C47).
 
-### 3.6 Simulation tiers and scenario format (L9; [sim](council/r1/sim.md))
+### 3.6 Simulation
 
-| Tier | Autopilot | Camera | Where | Use |
-|---|---|---|---|---|
-| 0 MockVehicle | Pure-Python kinematic vehicle speaking MAVLink (pymavlink), 10× speed; mirrors the verb allowlist, `NAV_DLL_ACT` and battery model | Synthetic or `gt_detector` | Anywhere; CI | Unit, contract and e2e |
-| **A (default)** | **PX4 v1.18 SIH** prebuilt `.deb` (`px4_1.18.0~rc2-noble_amd64.deb`, 12 MB [probed]; Docker image on macOS/Win) | **Synthetic**: NAIP ortho (public domain) homography + metric sprites + exact GT boxes, 4.0 ms/frame at 720p [probed]; **Replay**: real annotated clips registered to the SIH trajectory (VisDrone-MOT, Okutama) for G2 accuracy | Laptops; this workspace after approval | Dev, demo, G1/G2 metrics |
-| B (showcase) | PX4 + Gazebo Harmonic `x500_mono_cam_down` | Rendered gz camera RTP 5600+i | Ubuntu 24.04 + NVIDIA laptop | Visual polish only |
+Full detail is in [spec/sim.md](spec/sim.md).
 
-Sprites serve flow and geometry only; **G2 accuracy numbers come only from replay or real imagery**. `gt_detector` emits Detections from GT with configurable Pd, FA rate, latency and noise, so the whole pipeline runs without ML. The PX4 binary has not run here (blocked by workspace permission policy, sim §1.2), so MockVehicle carries CI.
+| Tier | Autopilot | Camera | Use |
+|---|---|---|---|
+| **0 MockVehicle (default now)** | Pure-Python, pymavlink codec, `edith_common.px4` behaviour, reads `sim/profiles/quad_sim.yaml` | Synthetic, or video off with gt | Unit, contract, e2e, CI |
+| A (P1, approval-gated, L14) | PX4 v1.18 SIH `.deb` (rc2 [probed]; pin the final release if out by Dec 12), same profile applied after boot and read back | Synthetic or replay | Dev, demo, G1/G2 |
+| B (P2) | PX4 + Gazebo Harmonic, GPU laptop | Rendered gz camera, telemetry-interp pose | Visual polish |
 
-**Site** (C13): rural Piatt County, Illinois, origin 40.0700 N, 88.6300 W, 210 m MSL (MGRS 16TCK 61002 36799 [probed]), flat, with no military facility nearby. The named points are fictional: NAI 1 (road junction), NAI 2 (farm compound), CP 3, "north treeline".
+- **One vehicle profile (L15, C62).** Climb 3 m/s and cruise 10 m/s are sim-tuned and disclosed. Mock and PX4 read the same keys. The contract suite runs against both, and `edith sim record-px4` captures the trace that Mock is diffed against.
+- **Anchored expects (L15, C63).** Expectations are anchored to scripted events or GT events (e.g. "within 5 s of D1's camera seeing veh-7 for ≥3 s"). `edith scenario lint` rejects kinematically impossible expectations using the profile plus a deterministic in-process pre-run.
+- **Vignette.** The vignette was re-laid-out:
+  - NAI 1 is 250 m from launch.
+  - Both drones are tasked.
+  - Teammates sit inside D2's overwatch footprint, which exercises friendly association.
+  - It includes a timeout case, a dismiss with CoT retraction, a jam, a rejected "attack" and a triple-tap stop.
+  - The timeline is in [sim §7](spec/sim.md#7-scenariosdemo_vignetteyaml-authored-in-d2).
+- **Headless policy (L20, C59).**
+  - Encoded video is off by default for `--headless --detector gt`.
+  - gt_detector runs inside the sim and publishes `[Detection]` on UDP 5800+i to the companion's OffloadDetector, the same path as P3 offload.
+  - Encoded video is capped at 15 fps of wall-clock time.
+  - The vignette is synthetic on both drones, and replay appears only in `goal2_*`, so CI never needs `data/`.
+- **Frame sync (C60).** An SEI `frame_id` precedes every access unit, with a pts anchor as the fallback. The supervisor writes the SDP files.
+- **Site (C13).** Rural Piatt County, IL (origin 40.0700 N, 88.6300 W, 210 m MSL, MGRS 16TCK 61002 36799 [probed]); fictional named points.
 
-**Scenario YAML v1** (sim format plus voice/assert events):
+### 3.7 HUD
 
-```yaml
-version: 1
-seed: 1234
-origin: {lat: 40.0700, lon: -88.6300, alt_msl: 210}
-basemap: {source: naip, item: il_m_4008859_ne_16_030_20230813_20240214, extent_m: 2000, gsd_m: 0.5}
-ao: [[-800,-800],[800,-800],[800,800],[-800,800]]          # ENU m; also the geofence
-safety: {alt_agl_m: [30,120], default_alt_m: 60, max_range_m: 1500, min_task_battery_pct: 30}
-px4_params: {NAV_DLL_ACT: 2, COM_DL_LOSS_T: 20}
-operator: {id: op1, callsign: "RAVEN 1", path: [{t: 0, e: -300, n: -300, heading: 45}]}
-teammates: [{uid: tm-2, callsign: "RAVEN 2", path: [{t: 0, e: -320, n: -290}, {t: 300, e: -100, n: 0}]}]
-assets:
-  - {id: drone1, callsign: "DRONE 1", px4_instance: 0, spawn: {e: -300, n: -280},
-     camera: {mode: synth, w: 1280, h: 720, hfov: 70, pitch: -60, fps: 15}}
-  - {id: drone2, callsign: "DRONE 2", px4_instance: 1, spawn: {e: -280, n: -280},
-     camera: {mode: replay, clip: visdrone-mot/uav0000086_00000_v, alt_agl_m: 50, track: orbit}}
-gazetteer: [{name: "NAI 1", e: 400, n: 250}, {name: "NAI 2", e: 380, n: -120, area_m: 200}, {name: "CP 3", e: -300, n: -300}]
-entities:
-  - {id: veh-7, cls: vehicle, sprite: pickup_tan, path: [{t: 60, e: 400, n: 250}, {t: 180, e: 150, n: 420}]}
-  - {id: per-3, cls: person, sprite: person_dark, path: [{t: 0, e: 380, n: -120}], loiter_radius_m: 15}
-events:                                                    # say/touch inject operator input in headless runs
-  - {t: 30,  type: say,  text: "drone one scout nai one"}
-  - {t: 33,  type: say,  text: "confirm"}
-  - {t: 120, type: jam,  duration_s: 25, links: ["mavlink:drone2", "tak:*"]}
-  - {t: 250, type: say,  text: "drone one attack the vehicle"}
-  - {t: 260, type: touch, gesture: triple_tap}
-expect:                                                    # headless run exits non-zero if any fails
-  - {by_t: 34,  proposal: {verb: search, state: dispatched}}
-  - {by_t: 90,  alert: {kind: new_contact, cls: vehicle, tier: caution}, cot: {type: a-u-G-E-V}}
-  - {by_t: 142, asset: {id: drone2, link: lost}}
-  - {by_t: 150, outbox: {flushed: true, order_preserved: true}}
-  - {at_t: 251, intent: {result: rejected}, mavlink_commands_since: {t: 250, count: 0}}
-  - {by_t: 261, asset: {id: drone1, mode: AUTO.LOITER}}
-```
+Full detail is in [spec/hud.md](spec/hud.md). Binding changes (L22, C65):
 
-Each run writes `gt_events.jsonl` (`entity_spawn/despawn`, `entity_in_fov{asset, entity, t_enter, t_exit, min_range, px_height}`, `jam_start/end`, `asset_mode`, `battery`) on `sim.truth.*`; **only `bench/`, `tests/` and `gt_detector` may import it** (lint test). PX4 is not bit-deterministic, so assertions use tolerances. Linkshaper is an asyncio UDP proxy for MAVLink and CoT with scripted drop/latency/partition/bandwidth windows; the true-pose tap feeding cameras is never impaired.
+- **Layout:**
+  - The banner/card is fixed at 60,330–580,424, with rows of 28/20/20 px at pitch 32/24/24.
+  - The clear zone is 170,150–470,326.
+  - The card has 3 rows (header + bar, row A, row B). The confirm hint moves to the voice row and is derived from `confirm_with`.
+  - Read-back is `rows[2]`, each ≤490 px **measured** on the bundled B612. Banner row 1 is ≤400 px at 28 px, and `~` is dropped at ≥1 km.
+- **Glyphs:** every symbol (tier glyphs, voice shapes, ✕, clamps, bar, quatrefoils, progress ring) is a vector path in `Glyphs.kt`. A lint checks every text codepoint against the cmap.
+- **Small-text fixes:** inset label `D2 · LIVE · 0.4s`; DATA stale on its own line; `REC` in the voice row; transcript ellipsized at the head.
+- **Night:** dim green, APL ≤3%. The inset is green-mapped, ≤8% transient, and auto-closes after 10 s.
+- **Gestures (L18, C46, C47):**
 
-### 3.7 HUD spec ([hud](council/r1/hud.md), with L3/L5/L6 applied)
+  | Gesture | Action |
+  |---|---|
+  | Triple-tap | STOP, immediately |
+  | Double-tap | Held 400 ms by the companion, dropped if a triple-tap follows. Then CANCEL the card or DISMISS (never on WARNING). A gesture dismiss shows `DISMISSED · slide back to undo` for 3 s |
+  | Slide down | Show the queue |
+  | Two-finger hold | Raw-timed ≥1000 ms with a progress ring = CONFIRM, only if T7 passed. It never opens PTT |
+  | A second pointer during the PTT window | Cancels PTT |
+  | Raw input | Feeds `InputFsm` via `dispatchTouchEvent`; hud-core has no pointer modifiers |
 
-Display: 640×480 per eye, ~24.2°×18.3°, 26.4 px/deg. Vendor hard rules ([RayNeo design spec](https://rayneo.gitbook.io/rayneo-devdoc/x-xi-lie/she-ji-gui-fan)): safe area x30–610 / y20–460 per eye; text ≥16 px; lines ≥2 px; **black = transparent, no filled panels behind text**; APL ≤13% persistent, ≤25% transient; ≤30 fps; red for warnings only.
+- **Stereo (L5):** the HUD is recorded once into a `GraphicsLayer` and drawn into both slots from the measured window. `dx` defaults to 0.
+- **Lints:** APL as defined in [hud §9](spec/hud.md#9-lints-and-goldens-d11); region bounds; clear zone; ≥16 px text; ≥2 px strokes; cmap. The ≥24-state golden list is approved by Alisha on Linux.
 
-| Region | Box (x0,y0–x1,y1) | Content |
+### 3.8 Glasses app (Kotlin)
+
+| Module | Owner | Content |
 |---|---|---|
-| Mini-map | 30,20–190,180 | Heading-up circle r=76 px; default 500 m (rings 50/100%); voice "map" 250/500/1k/2k; ≤12 symbols, then clusters |
-| Status strip | 30,184–190,204 | 16 px `TAK●` `GPS●` companion battery %; `DATA 45s` when stale; `REC` when audio is retained |
-| Heading tape | 200,20–420,58 | Compressed ±55° (2 px/°), 10° ticks, cardinals, boxed 3-digit heading; carets at y46–58 (cyan drones, yellow unknowns); ◄/► clamps |
-| Drone inset | 440,20–610,148 + label to y166 | 170×128 of 320×240 video; label `DRONE 2 · LIVE · 0.4s`; `FROZEN 3s` + slash when the frame is >1 s old; contrast-stretched without lifting blacks |
-| Drone chips | 440,170–610,204 | `D1 ORBIT 62%` `D2 LINK✕ RTL 0:12` (16 px) |
-| Center clear zone | 170,150–470,330 | Nothing persistent; only the conformal caret band y232–248, \|Δ\|≤11°, hidden at yaw rate >60°/s or heading unc >10°; no reticle |
-| Banner / confirm card | 60,336–580,410 (card may grow to y316) | §3.7.2 |
-| Voice state | 30,432–250,458 | `● LISTENING` `◌ READY` `… PROCESSING` `■ MUTED` `✕ VOICE OFFLINE` (distinct shapes) |
-| Transcript | 260,432–610,458 | 16 px last heard, fades after 3 s |
+| `hud-core` (KMP `commonMain` + `jvm` + `android`) | H | Protocol models, Ktor WS client, layout math, `HudRenderer`, `Glyphs.kt`, B612, lints |
+| `emulator-desktop` | H | Compose Desktop. Single-eye 640×480 and SBS 1280×480 views; see-through composite; mouse/arrow head yaw; Space = PTT; keys → InputEvent; headless `--render-fixtures` via `ImageComposeScene` (headless Skia UNVERIFIED, with a Java2D fallback) |
+| `platform-api` | G | `GlassesPlatform { display, input, mic, pose, camera, power, info }` |
+| `platform-rayneo` | G | The only module importing `com.ffalcon.*`. `BaseEventActivity` host, `MercurySDK.init`, voice mode, RV/fused heading, `cyttsp5_mt` right-pad id |
+| `platform-generic` | G | AOSP phone: touchscreen, `VOICE_RECOGNITION`, phone RV, Camera2 |
+| `app-android` | G | Flavors `rayneo` / `generic`. `HudActivity` (dispatchTouchEvent → InputFsm first), `StereoCompositor`, PTT FSM with pre-roll, BT HID key, inset decoder (MJPEG, latest frame), provisioning from intent extras into SharedPreferences, `BenchActivity` (P1) |
+| `selftest` | G | Standalone `SelfTestActivity` that depends only on `platform-api` and `platform-rayneo` (T5–T18), so it ships before hud-core (C74) |
 
-**Palette** (monochrome-first: shape and text carry meaning; C29):
-
-| Token | sRGB | Use |
-|---|---|---|
-| `fg` | `#E8FFE8` | Text, tape, rings (40%) |
-| `friend` | `#33DDFF` | Teammates, own drones |
-| `unknown` | `#FFD400` | **All machine detections**, CAUTION tier (replaces amber `#FFB000`, L3) |
-| `warning` | `#FF3030` | WARNING border/glyph; human-reclassified hostile only |
-| `ok` | `#44FF66` | Voice/link nominal |
-| `night` | `#33FF66` at the minimum readable level (target <5 cd/m², measured) | **Night mode: everything dim green, APL ≤3%, inset on request only, rings off** (L6; MIL-STD-3009 NVIS rationale). Red "dark-adapt" variant optional |
-
-**Symbology** (2525-like, 12 px, 2–3 px strokes):
-
-| Entity | Symbol |
-|---|---|
-| Self | `fg` chevron |
-| Teammate | Cyan filled circle with heading tick |
-| Own drone | Cyan "∩" plus its number |
-| Machine detection | **Yellow open quatrefoil** (unknown frame, four 2 px lobes) with class letter P/V (C05); never a diamond |
-| Human-marked contact | Filled quatrefoil |
-| Human-reclassified hostile | Red open diamond |
-| Stale | Dashed after 30 s; "last known 2m" after 120 s; removed at 5 min |
-
-**Typography:** B612 Bold (OFL, bundled). Alert headline 28 px (~45′), detail/confirm rows 20 px, static labels 16 px.
-
-#### 3.7.2 Alert and confirm cards
-
-```
-┌─◆ VEHICLE · 2 o'clock · ~400 m ─────────────────── +2 ◆▲ ┐   row1 28 px (≤28 chars), live clock
-│   DRONE 2 · UNKNOWN · 12 s                               │   row2 20 px (source · affiliation · age)
-└── say WATCH · MARK · DISMISS ────────────────────────────┘   row3 20 px
-```
-The 2 px tier-color border flashes at 2 Hz for 2 s, then holds (≤3 Hz). Glyphs: ▲ WARNING, ◆ CAUTION, ⓘ ADVISORY. `+N` shows the queue with per-tier pips.
-
-```
-CONFIRM TASK                                     ████████░░ 10s
-DRONE 2 → SEARCH NAI 2  (16T CK 6138 3668)
-ALT 60 m · AREA 200 m · ETA 2 min
-say CONFIRM / CANCEL        hold 2 fingers = confirm
-```
-The card renders from `CommandProposal`, never the raw transcript. The hint reads `…` during the 0.6 s lockout. Timeout shows `NOT SENT — timed out` (it never auto-confirms). After confirm: `SENT` → `ACK DRONE 2`, or yellow `NO ACK — link` after 3 s. A safety stop shows the yellow toast `ALL HOLD` / `D2 HOLD`.
-
-**Modes:** Day (full palette); Night (dim green, above); Quiet (no TTS/earcons, touch confirm preferred); Degraded (stale styling, `COMPANION LOST — LOCAL ONLY`, `✕ VOICE OFFLINE` → touch); Declutter (FULL → MIN: tape, banner, voice → WARN-ONLY).
-
-**Temple gestures** (no single gesture can command an asset beyond STOP):
-
-| Gesture | Action |
-|---|---|
-| Tap | Show queue |
-| Swipe fwd/back | Next/prev alert |
-| Double-tap | DISMISS / CANCEL |
-| **Triple-tap** | **SAFETY STOP: hold all** (L1, C08) |
-| Long-press ≥300 ms (hold) | PTT |
-| Two-finger hold ≥1 s with ring | CONFIRM (only while a card is open) |
-
-Input is ignored within 300 ms of a wear-state change. If T7 shows the system owns long-press, PTT becomes tap-toggle (8 s cap).
-
-### 3.8 Glasses app (Kotlin; [platform](council/r1/platform.md), L5)
-
-| Module | Content |
-|---|---|
-| `hud-core` (KMP: `commonMain` + `jvm` + `android`) | Protocol models (kotlinx.serialization), Ktor WS client, layout math in pure Kotlin, `HudRenderer` on Compose `DrawScope`, B612 font, lints (APL, min text, stroke) |
-| `platform-api` | `GlassesPlatform` and sub-interfaces (below) |
-| `platform-rayneo` | **The only module importing `com.ffalcon.*`**. Host `BaseEventActivity` (not `BaseMirrorActivity`); `TempleAction` + raw DOWN/UP → `InputEvent`; `MercurySDK.init`; `audio_source_record` mode; RV/fused heading |
-| `platform-generic` | AOSP phone: touchscreen gestures, `VOICE_RECOGNITION`, phone RV, Camera2 |
-| `app-android` | Flavors `rayneo` / `generic`. `HudActivity`, `SelfTestActivity` (T0–T18), `BenchActivity` (P1). `StereoCompositor` inside `DisplaySink`. mDNS + manual IP |
-| `emulator-desktop` | Compose Desktop, same `hud-core` (§3.9) |
-
-```kotlin
-interface GlassesPlatform {
-  val display: DisplaySink   // eyeSize 640×480, stereoMode: SBS_DUPLICATE|MONO|SBS_LEFT_ONLY, eyeOffsetPx(L,R), setBrightness(0..200), keepOn()
-  val input: InputSource     // Flow<InputEvent>: Tap, DoubleTap, TripleTap, SlideFwd/Back/Up/Down, PttDown, PttUp, TwoFingerHold, TwoFingerTap, Back
-  val mic: MicSource         // open(ASR|AMBIENT) -> Flow<ShortArray 320 samples @16 kHz>
-  val pose: PoseSource       // Flow<Pose(yaw, pitch, roll, heading, headingUnc, source)> 20–50 Hz
-  val camera: CameraSource   // frames(w, h, fps, YUV|JPEG)  (benchmark only, off by default)
-  val power: PowerMonitor    // battery%, µA, mV, °C, thermalStatus, headroom
-  val info: DeviceInfo       // model, fingerprint, sdkInt, capabilities -> sys.hello
-}
-```
-
-- **Display (L5):** the app renders **side-by-side**. It is one `Row` of two 640×480 slots drawn by the same renderer, with per-eye `dx` offset; video is decoded once and drawn twice. The `rayneo` default is `SBS_DUPLICATE` (1280×480 logical, UNVERIFIED until T5: `wm size`). The mode is a runtime switch. A `View/Canvas` backend exists in case Compose is too slow when drawn twice.
-- **Manifest:** `<meta-data android:name="com.rayneo.mercury.app" android:value="true"/>`, landscape, `keepScreenOn`. Permissions: CAMERA, RECORD_AUDIO, INTERNET, CHANGE_WIFI_MULTICAST_STATE, WRITE_SETTINGS.
-- **Levels:** compileSdk 34 (installed at `/opt/android-sdk`), minSdk 29, targetSdk 34, JVM target 17. The device is very likely Android 12 / API 31–32 (UNVERIFIED, T0).
-- **SDK handling:** `tools/fetch_rayneo_sdk.sh` downloads `MercuryAndroidSDK-v0.2.6-…aar`, `RayNeoIPCSDK…aar` and the sample. It verifies SHA-256 against `glasses/platform-rayneo/sdk.lock`; the full hashes are recorded on first fetch, because platform.md gives prefixes. Files land in gitignored `glasses/platform-rayneo/libs/`. The SDK has no license text, so it is treated as proprietary and never committed. Without the SDK, `rayneo` tasks fail with a clear message while `generic` still builds.
-- **Inset:** MJPEG over WS, `BitmapFactory` on one worker, latest frame only. RTSP and WebRTC are rejected. H.264 via MediaCodec only if T13 latency is >250 ms.
-- **Thermal policy:** at `MODERATE`, inset drops to 5 fps and the camera turns off. At `SEVERE`, HUD only.
-
-### 3.9 Emulator (`glasses/emulator-desktop`)
-- **Views (L5):** **single-eye 640×480** (×2 nearest-neighbor); **SBS 1280×480**, exactly as sent to the glasses; see-through composite out = clamp(T·bg + k·hud) over background clips; optional true-angular view.
-- **Inputs:** mouse/arrows for head yaw/pitch (or a replayed IMU log); Space = PTT (laptop mic or injected WAV); typed text via `voice.text`; keys → `InputEvent` (e.g. T = triple-tap, C = two-finger hold).
-- **Lints:** live APL meter (warns at 13%/25%), text ≥16 px, stroke ≥2 px, colorblind simulation.
-- **Headless:** `--render-fixtures dir/` writes golden PNGs (both views) via `ImageComposeScene`. Headless Skia in this workspace is UNVERIFIED (D11 spike), with a Robolectric/Java2D fallback.
-- **Python `tools/fake_glasses.py`:** a WS client for CI. It records HudState and scripts inputs.
+- **Levels (L12, C43):** compileSdk **36**, targetSdk 34, minSdk 29, JVM 17. The device is very likely API 31–32 (UNVERIFIED, T0).
+- **Manifest (C45):**
+  - `com.rayneo.mercury.app=true` meta-data, landscape, `keepScreenOn`.
+  - `Theme.AppCompat.NoActionBar` with a black `windowBackground` (`BaseEventActivity` extends AppCompatActivity [SDK]).
+  - `network_security_config.xml` with cleartext permitted, because Phase 0 is LAN `ws://` only.
+  - Permissions: CAMERA, RECORD_AUDIO, INTERNET, ACCESS_NETWORK_STATE. No WRITE_SETTINGS and no multicast permission.
+  - Brightness through `window.attributes.screenBrightness`.
+  - `adb install -r -g`.
+- **RayNeo SDK (L13, C44):**
+  - `tools/fetch_rayneo_sdk.sh [--from <zip>]` fetches **only the sample zip** and verifies sha256 `1c78e3c4…f47` (full hashes in `sdk.lock` [probed]).
+  - It extracts the Mercury AAR (`5d408e2c…676`) into a local Maven repo `glasses/platform-rayneo/libs/m2/com/ffalcon/mercury-sdk/0.2.6/`, with a generated POM listing the SDK's runtime dependencies (appcompat, fragment, activity, lifecycle, recyclerview, viewbinding, coroutines; versions from the sample's `build.gradle`).
+  - It deletes `xr2-platform.jks`.
+  - The IPC AAR is not used.
+  - `settings.gradle.kts` includes `:platform-rayneo`, `:selftest` and the `rayneo` flavor only when the repo exists. Otherwise it warns, and `generic` still builds.
+  - The SDK is never committed.
+- **Thermal:** at `MODERATE` the inset drops to 5 fps and the camera turns off. At `SEVERE` the app runs the HUD only.
+- **Python `tools/edith_tools/fake_glasses.py`:** the CI client. It records `HudState`, scripts inputs and **emits `card_shown`**.
 
 ---
 
-## 4. Repo, stack, running, testing
+## 4. Repo, stack, running, testing, delivery
 
 ### 4.1 Layout
 
 ```
-edith/
-  edith                         # bash shim → uv run python -m edith_tools.cli
-  pyproject.toml uv.lock        # uv workspace root (owner WS-A)
-  schemas/v1/*.schema.json      # source of truth (owner WS-A)
-  schemas/fixtures/{valid,invalid}/<type>/*.json   schemas/cot/*.xml
-  common/edith_common/          # envelope, models (pydantic), geo, clock, ids
-  companion/edith_companion/    # gateway bus eventlog world voice intent safety assets perception alerts hud tak config
-  sim/edith_sim/                # scenario, mover, mockvehicle, px4, camera, linkshaper, teammates, truth, gt_detector
-  ml/edith_ml/                  # models.yaml (sha256+URL), detectors, export (onnx2tf), train, eval
-  bench/edith_bench/            # goal1, goal2, placement, pareto
-  tools/edith_tools/            # cli (+ commands/<ws>.py), fetch_data, cost_model
-  tools/*.sh                    # fetch_rayneo_sdk.sh, install_px4.sh, bringup.sh
-  scenarios/                    # demo_vignette.yaml, demo_scout.yaml, jam.yaml, goal2_*.yaml
-  glasses/                      # settings.gradle.kts, gradle/libs.versions.toml, hud-core, platform-*, app-android, emulator-desktop
-  tests/{e2e,lint}/             # cross-package
-  docs/  PLAN.md  council/  bringup/  cost/  LICENSES.md
-  data/ models/ runs/           # gitignored
+edith/                              (git: github.com/Anshuman-Singhal/edith, private, branch main — L13)
+  edith                             # bash shim → uv run python -m edith_tools.cli
+  pyproject.toml uv.lock            # uv workspace root; uv.lock sole writer = WS-A
+  docs/OWNERS.yaml                  # path globs → WS; lint proves no overlap and full coverage
+  schemas/v1/ schemas/fixtures/ schemas/cot/
+  common/edith_common/              # envelope, models, geo, clock (ScaledClock); px4/ (owned by D)
+  companion/edith_companion/        # §3.1 modules
+  sim/edith_sim/ sim/profiles/ sim/traces/ sim/data.lock.yaml
+  ml/edith_ml/ ml/models.yaml ml/splits.yaml
+  bench/edith_bench/ bench/noise.lock.yaml
+  tools/edith_tools/{cli,fetch,supervisor,commands/<ws>.py,fake_glasses.py,cot_router.py,capture_asr.py,cost_model.py}
+  tools/{fetch_rayneo_sdk.sh,install_px4.sh,bringup.sh}
+  scenarios/   glasses/   tests/{e2e,lint}/   .github/workflows/ci.yml
+  docs/{PLAN.md,spec/,council/,bringup/,cost/,walkthroughs/,requests/,LICENSES.md}
+  data/ models/ runs/ dist/ glasses/platform-rayneo/libs/     # gitignored
 ```
 
-### 4.2 Tech stack (pins; `uv.lock` and `libs.versions.toml` are authoritative)
+### 4.2 Pinned stack (`uv.lock` and `glasses/gradle/libs.versions.toml` are authoritative)
 
-| Component | Version | License | Note |
-|---|---|---|---|
-| Python | 3.13 | — | installed |
-| uv / ruff | installed | MIT | |
-| numpy | 2.5.3 | BSD | installed |
-| onnxruntime | 1.29.0 | MIT | installed; benchmarks measured on it |
-| opencv-python-headless | 5.0.0.93 | Apache-2.0 | installed |
-| pydantic / jsonschema | 2.13.5 / 4.26.0 | MIT | installed |
-| pytest / hypothesis | 9.1.1 / latest at lock | MIT/MPL-2.0 | |
-| aiohttp | 3.x latest at lock | Apache-2.0 | WS + HTTP (C28) |
-| pymavlink | 2.4.50 | LGPL-3.0 | [probed] wheels cp39–cp314; LGPL dynamic use is acceptable |
-| pymap3d / mgrs | 3.2.0 / 1.7.1 | BSD / MIT | [probed] |
-| lark | 1.x latest | MIT | grammar |
-| PyAV (`av`) | latest cp313 wheel | BSD | RTP H.264 decode |
-| PyTAK | 7.x | Apache-2.0 | transports; Py 3.13 UNVERIFIED → stdlib fallback |
-| sherpa-onnx / moonshine / vosk | latest at lock | Apache/MIT/Apache | Py 3.13 wheels UNVERIFIED (D10) |
-| onnx2tf + tensorflow (separate venv) | latest supporting the venv | Apache/MIT | D14 only |
-| PX4 SIH | 1.18.0~rc2 deb | BSD-3 | pinned by sha256 |
-| JDK / Gradle | 21 / 8.14.3 | — | installed |
-| Kotlin / AGP | 2.2.x / 8.13.x | Apache-2.0 | exact patch fixed in the D11 spike |
-| Compose Multiplatform | 1.9.x matching Kotlin | Apache-2.0 | |
-| Ktor / kotlinx.serialization | 3.x / 1.9.x | Apache-2.0 | |
-| Robolectric | 4.15+ (android-all 31) | MIT | |
-| Android SDK | platforms;android-34, build-tools 34.0.0 | — | installed at `/opt/android-sdk` |
-| B612 font | 1.008 | OFL | bundled |
+| Component | Version | Note |
+|---|---|---|
+| Python / uv / ruff | 3.13 / installed | |
+| numpy · onnxruntime · opencv-python-headless | 2.5.3 · 1.29.0 · 5.0.0.93 | installed |
+| pydantic · jsonschema · pytest · hypothesis | 2.13.5 · 4.26.0 · 9.1.1 · pinned at lock | |
+| aiohttp · lark | 3.x at lock · **1.3.1** | |
+| pymavlink | 2.4.50 | LGPL-3.0, dynamic use |
+| pymap3d · mgrs | 3.2.0 · 1.7.1 | |
+| PyAV (`av`) | cp313 at lock | Whether the bundled FFmpeg has GPL parts is UNVERIFIED; `av.library_meta` is recorded in LICENSES.md, and encoding stays in `sim/` (C84) |
+| moonshine-voice · sherpa-onnx · vosk | **0.1.6 · 2.0.3 · 0.3.45** | Optional extra `voice` [probed on 3.13]; never `piper-tts` |
+| pytak · takproto | at lock | Optional extra `tak` |
+| Pillow · fontTools | at lock | Text-fit tests on B612 |
+| D14 venv | `uv venv -p 3.12`: torch CPU, onnx2tf, tensorflow, ai-edge-litert | Separate; never in the lock |
+| PX4 SIH | 1.18.0~rc2 deb (sha256 pinned); final release if available | Approval-gated |
+| JDK / Gradle | 21 / **8.14.3 wrapper committed** | |
+| **AGP · Kotlin · CMP** | **8.13.2 · 2.2.21 · 1.9.3** | One compatible set (L12, C43) |
+| **Ktor · kotlinx.serialization · coroutines** | **3.3.3 · 1.9.0 · 1.10.2** | Ktor ≥3.4 and serialization ≥1.10 need Kotlin 2.3 |
+| Robolectric | **4.16.1**, `@Config(sdk=[31])` | |
+| Android SDK | platforms 34/35/36, build-tools 34/35/36 at `/opt/android-sdk`; `adb` from platform-tools | L12 |
+| B612 | 1.008 (OFL) | bundled TTF |
 
-### 4.3 How to run
+### 4.3 Commands
 
 ```
-./edith doctor                                  # env check: python, uv, java, gradle, android sdk, ports free
-./edith fetch models|rayneo-sdk|naip|visdrone-mot|noise|all
+./edith doctor                         # versions, SDK 36, adb on PATH, ports free (14550 must be free), Intel-mac Moonshine note
+./edith fetch models|naip|noise|visdrone-mot|rayneo-sdk [--from zip]|all   # hash-pinned per-WS lockfiles
+./edith scenario lint scenarios/*.yaml
 ./edith up --headless --scenario scenarios/demo_vignette.yaml --assets mock --detector gt --speed 4
-./edith up --scenario scenarios/demo_vignette.yaml --assets px4 --detector yolox --emulator sbs --tak mesh
-./edith up ... --tak tcp://10.0.0.5:8087        # optional OpenTAKServer
-./edith test unit|contract|golden|integration|e2e|android|all
-./edith bench goal1|goal2|placement|pareto [--clips set.yaml]
-./edith glasses build|test|golden|emulator|install|selftest|pull
-./edith ci                                       # what CI runs
+./edith up --scenario scenarios/demo_live.yaml --assets px4 --detector yolox --emulator sbs --tak mesh   # speed 1
+./edith test unit|contract|golden|integration|e2e|e2e-px4|android|lint|all   # unit = Python only
+./edith bench goal1|goal2|placement|pareto
+./edith glasses build|test|golden|emulator|dist|install --ip <ip>|selftest|pull
+./edith sim record-px4                 # golden PX4 trace on any laptop
+./edith ci
 ```
 
-`edith up` is a Python supervisor (there is no Docker). It starts the sims and PX4/Mock, linkshaper, cameras, the companion and the optional emulator, waits on `/healthz`, multiplexes logs into `runs/<ts>/`, and in `--headless` mode exits 0 only if every scenario `expect` passes.
+`edith up` is a Python supervisor; there is no Docker. It does the following:
 
-### 4.4 Test strategy and CI
+1. Exports the ScaledClock environment.
+2. Starts Mock or PX4, linkshaper, simd and gt, the fake router, the teammate sim, the companion and the optional emulator.
+3. Waits on `/healthz`.
+4. Writes logs, SDP files, the wire log and the summary to `runs/<ts>/`.
+5. With `--headless`, exits 0 only if lint and every expect pass.
+
+### 4.4 Tests and CI
 
 | Tier | Content | Budget here |
 |---|---|---|
-| unit | pytest + Hypothesis: normalizer, grammar, resolver, gate, FSM invariants I1–I6, ranker, geo, CoT, outbox; Kotlin JUnit: layout, PTT, heading fusion, compositor, clock offset | <90 s |
-| contract | Every fixture validated by `jsonschema` (valid pass, invalid fail); pydantic and Kotlin round-trip of every valid fixture | <60 s |
-| golden | Emulator PNGs (single + SBS) for every alert tier, card states, modes, stale/frozen, heading fallback; pixel diff ≤0.5%; lints | <3 min |
-| integration | Companion + MockVehicle + fake_glasses + CoT fake router; voice WAV → proposal; linkshaper partition | <3 min |
-| e2e | `edith up --headless` on `demo_vignette.yaml` (mock) | <5 min |
-| e2e-px4 | Same against PX4 SIH ×2 | manual/nightly, after approval |
-| android | `assembleRayneoDebug assembleGenericDebug`, `aapt2` manifest checks, JVM + Robolectric | <10 min |
+| lint | ruff; OWNERS overlap/coverage; no-binaries; truth-import; companion never imports `edith_sim`; NC-artifact packaging | <30 s |
+| unit | Python: normalizer, grammar, resolver, confirm rule, FSM, I1–I8, ranker, geo, tracker, CoT, outbox, scenario lint | <90 s |
+| contract | Fixtures through jsonschema; pydantic + Kotlin round-trip; adapter contract vs Mock | <90 s |
+| golden | Emulator PNGs (≥24 states × 2 views), lints | <3 min |
+| integration | Companion + Mock + fake_glasses + fake router; WAV → proposal; partitions | <3 min |
+| e2e | `demo_vignette` headless (mock, gt, video off) | <5 min |
+| e2e-px4 | Same with `--assets px4 --speed 1` | On team laptops; here after approval |
+| android | `assembleRayneoDebug assembleGenericDebug :selftest:assembleRayneoDebug`, aapt2 checks, JVM + Robolectric | <10 min |
 
-CI runs `./edith ci` locally and through `.github/workflows/ci.yml` (ubuntu-latest) if a remote is added. Model and dataset downloads are cached and hash-checked. The NC dataset tests are skipped unless `data/` is present.
+- **Gradle memory (C77):** `glasses/gradle.properties` sets `-Xmx3g`, the Kotlin daemon to 1536m, `parallel=false`, `workers.max=2`, and Robolectric `maxHeapSize=1g`.
+- `./edith ci` runs the glasses build **serially, never alongside e2e**.
+- Tests take `--port-base`.
+- CI never reads gitignored data. Tests needing `data/` are marked `needs_data` and skip with a reason.
+- `.github/workflows/ci.yml` runs the same steps on ubuntu-latest, without the RayNeo SDK.
+
+### 4.5 Delivery (L13, C75)
+
+- **Git:** one commit per deliverable, pushed to `origin main`.
+- **No binaries in git.** The banned list is APKs, AARs, model weights, datasets, archives, keystores and the RayNeo SDK.
+  - A lint allowlists only the B612 TTF, `gradle-wrapper.jar`, the ≤200 KB CC0 sprites and the golden PNGs.
+  - Models, data and the SDK are fetched by script with pinned hashes. The RayNeo script accepts `--from <local zip>`, because vendor URLs are tokenized.
+- **APKs are reproducible with one command:** `./edith glasses dist` → `dist/edith-rayneo-debug.apk`, `dist/edith-generic-debug.apk`, `dist/edith-selftest-rayneo-debug.apk` and `SHA256SUMS`. These files are **handed to the user directly**, so day-one bring-up needs no Gradle build on a team laptop.
+- **`docs/bringup/INSTALL.md`** covers adb on macOS, Windows and Linux, plus the provisioning command.
 
 ---
 
 ## 5. Pre-arrival build scope (Phase B, this workspace)
 
-The workspace has 2 CPU, 7 GB RAM, no GPU, no KVM, no Docker, and no device. PX4 execution and `apt` were blocked by permission policy in round 1. All numbers measured here are **lower bounds**. Priorities: **P0** must ship, **P1** should, **P2** stretch.
+The workspace has 2 CPU, 7 GB RAM, no GPU, no Docker and no device. PX4 and apt are pending approval (L14), so everything P0 runs on MockVehicle. Numbers measured here are lower bounds. Priorities: **P0** must ship, **P1** should, **P2** stretch.
 
-### 5.1 Workstreams and file ownership
+### 5.1 Workstreams and exclusive file ownership (L23, C73)
 
-| WS | Owner role (human counterpart) | Owns (exclusive write) | Deliverables |
+`docs/OWNERS.yaml` encodes the table below. `tests/lint/test_owners.py` fails if any tracked file has zero or two owners. The most specific glob wins only where this table lists it as an exception.
+
+| WS | Phase B builder | Human owner | Exclusive write |
 |---|---|---|---|
-| A Core contracts | Architect (Anshuman) | `pyproject.toml`, `schemas/`, `common/`, `tools/edith_tools/cli/` core, `docs/LICENSES.md` | D0, D1 |
-| B Companion core | Architect (Anshuman) | `companion/edith_companion/{gateway,bus,eventlog,world,safety,assets,alerts,hud,config}`, `tools/fake_glasses.py`, `tests/e2e/` | D3, D6 |
-| C Voice | Voice (Om) | `companion/edith_companion/{voice,intent}`, `bench/edith_bench/goal1`, `tools/replay_voice.py` | D4, D10, D18 |
-| D Sim | Sim (Arjun) | `sim/`, `scenarios/`, `tools/install_px4.sh` | D2, D7, D15, D17 |
-| E ML | ML (Anshuman) | `ml/`, `companion/edith_companion/perception/`, `sim/edith_sim/gt_detector.py`, `bench/edith_bench/{goal2,placement,pareto}`, `tools/edith_tools/fetch_data.py` | D8, D9, D14, D16 |
-| F TAK + cost | Defense SME / Systems (Simon) | `companion/edith_companion/tak/`, `sim/edith_sim/teammates/`, `docs/cost/`, `tools/edith_tools/cost_model.py` | D5, D19, D20 |
-| G Glasses | Platform + HUD (Arjun, Alisha) | `glasses/`, `tools/fetch_rayneo_sdk.sh`, `tools/bringup.sh`, `docs/bringup/` | D11, D12, D13 |
+| **A** Contracts & repo | architect | **Anshuman** | `pyproject.toml`, `uv.lock` (sole writer), `edith`, `schemas/`, `common/` (except `common/edith_common/px4/`), `tools/edith_tools/{cli,fetch}/`, `tools/edith_tools/commands/__init__.py`, `tests/lint/`, `.github/`, `.gitignore`, `README.md`, `docs/{OWNERS.yaml,LICENSES.md,PLAN.md,spec/interfaces.md}` |
+| **B** Companion runtime & integration | architect | **Arjun** | `companion/pyproject.toml`, `companion/edith_companion/{__init__.py,__main__.py,gateway,bus,eventlog,world,assets,config}/`, `companion/tests/` (except the C/E/F/H subdirs), `tools/edith_tools/{supervisor/,fake_glasses.py}`, `tests/e2e/`, `bench/edith_bench/pareto/` |
+| **C** Voice, intent & safety | voice | **Om** | `companion/edith_companion/{voice,intent,safety}/`, `companion/tests/{voice,intent,safety}/`, `bench/edith_bench/goal1/`, `bench/noise.lock.yaml`, `tools/edith_tools/capture_asr.py`, `docs/spec/voice.md` |
+| **D** Sim | sim | **Simon** | `sim/` (except `gt_detector.py` and `teammates/`), `common/edith_common/px4/`, `scenarios/`, `tools/install_px4.sh`, `docs/spec/sim.md` |
+| **E** ML & perception | ml | **Anshuman** | `ml/`, `companion/edith_companion/perception/`, `companion/tests/perception/`, `sim/edith_sim/gt_detector.py`, `bench/{pyproject.toml,edith_bench/__init__.py,edith_bench/goal2,edith_bench/placement}`, `docs/spec/eval.md` |
+| **F** TAK & cost | defense_sme + pm | **Simon** | `companion/edith_companion/tak/`, `companion/tests/tak/`, `sim/edith_sim/teammates/`, `tools/edith_tools/{cot_router.py,cost_model.py}`, `docs/cost/` |
+| **G** Glasses platform | platform | **Arjun** | `glasses/{settings.gradle.kts,build.gradle.kts,gradle.properties,gradlew*,gradle/}`, `glasses/{platform-api,platform-rayneo,platform-generic,app-android,selftest}/`, `tools/{fetch_rayneo_sdk.sh,bringup.sh}`, `docs/bringup/` |
+| **H** HUD | hud | **Alisha** | `glasses/{hud-core,emulator-desktop}/`, `companion/edith_companion/{alerts,hud}/`, `companion/tests/{alerts,hud}/`, `docs/spec/hud.md` |
 
-Rules: `schemas/` changes go only through WS-A (others add fixtures under `schemas/fixtures/*/<their type>/` and request edits in `schemas/REQUESTS.md`); each Python package has its own `pyproject.toml` (uv workspace member) so dependency edits don't collide; CLI subcommands register from `tools/edith_tools/commands/<ws>.py`.
+**Rules:**
+- **Dependencies.** A declares every §4.2 dependency in D0. Additions are requested in `docs/requests/<ws>.md`; each WS owns its own file, and A merges the request into the lockfile.
+- **Schemas.** Schema changes go through A. Other workstreams add fixtures under `schemas/fixtures/*/<their type>/` via request.
+- **CLI.** Each WS owns `tools/edith_tools/commands/<ws>.py`; A creates the stubs in D0.
+- **Walkthroughs.** Each WS owns `docs/walkthroughs/<ws>.md`: one runnable walkthrough, used for the Dec 17 handoff (C83).
+- **Workload.** Anshuman owns 2 of 8 workstreams. Integration lead moves to Arjun.
 
-Order: D0 → D1 → {D2, D3, D4, D5, D7, D8, D11} in parallel → D6, D12 → the rest.
+### 5.2 Order
 
-### 5.2 Deliverables and acceptance tests
+1. **D0** (repo, git, owners, lints).
+2. **{D1, D13a}** in parallel. D13a is the deadline-bound, G0-critical bring-up kit.
+3. **{D2, D3b, D3c, D4, D5, D7, D8, D10a, D11}** in parallel. D3a starts here too, but its contract acceptance waits for D2.
+4. **{D3a, D12}**.
+5. **D6** (e2e vignette).
+6. **D13b** (full self-test).
+7. **P1:** D9, D10b, D14, D16, D19; D15 when PX4 is approved.
+8. **P2.**
+
+The glasses arrive around Nov 30, so D13a and D12 dist APKs are due by Nov 29.
+
+### 5.3 Deliverables and acceptance tests
 
 | # | P | WS | Deliverable | Acceptance tests (run here) |
 |---|---|---|---|---|
-| **D0** | P0 | A | Repo skeleton: uv workspace, `./edith` CLI with all subcommands (stubs allowed), ruff config, `.gitignore` (data/, models/, runs/, glasses/platform-rayneo/libs/), `docs/LICENSES.md` | `./edith doctor` → exit 0, prints Python 3.13, Java 21, Gradle 8.14.3, Android SDK 34. `ruff check .` → 0 errors. `./edith test unit` → exit 0. `git check-ignore data/x models/x` → both ignored |
-| **D1** | P0 | A | Schemas v1 for all §2.3/§2.4 types; ≥1 valid + ≥1 invalid fixture per type; pydantic models; `edith_common.geo` (ENU/LLA/MGRS, bearing, clock, range) and `clock` | `./edith test contract` → all valid fixtures pass and all invalid fail (≥40 fixtures); pydantic round-trip is byte-stable. Geo tests: ENU↔LLA round-trip <0.01 m; ENU→MGRS→ENU <1 m; `clock(rel_bearing=62°)=="2 o'clock"`; origin → `16TCK6100236799` |
-| **D2** | P0 | D | Scenario loader (pydantic + JSON Schema), seeded entity mover, GT logger, **MockVehicle** (pymavlink: heartbeat, 10 Hz telemetry, §2.6 commands, mission + fence, battery, `NAV_DLL_ACT`), pymavlink `AssetAdapter`, **linkshaper** | `pytest sim -q` passes. The adapter contract suite against MockVehicle (arm→takeoff→goto→orbit→search mission→hold→rtl→land at 10×) passes in <60 s. Same seed twice → identical `gt_events.jsonl` sha256. Linkshaper: 0 packets pass during the window; `link=lost` at `COM_DL_LOSS_T`; Mock RTLs; `link=ok` ≤2 s after the window |
-| **D3** | P0 | B | Companion core: bus, eventlog, world, safety gate, **proposal FSM + safety stop**, ranker, HUD projector, aiohttp gateway, `/ui/touch`, `fake_glasses.py` | Hypothesis (≥1,000 examples each): I1–I6 hold. Text-level adversarial suite: 10,000 non-confirm utterances into AWAIT_CONFIRM → **0 confirms**. Confirm before lockout ignored; at 10.1 s → EXPIRED. Safety stop → hold sent ≤500 ms, pending proposal SUPERSEDED. RTL/land require confirm. Ranker tests: dwell 3 s, +0.2 pre-empt, 10-min suppression with escalation override, flood collapse, WARNING invalidates proposal. fake_glasses receives hello + snapshot <500 ms; heartbeat 2 Hz ±10% |
-| **D4** | P0 | C | Normalizer, Lark grammar (§3.3), resolver (clock / MGRS / gazetteer / relative / contact), read-back generator; ≥400 golden utterance→intent fixtures | `pytest companion/tests/intent -q` → 100% of fixtures pass. Out-of-scope verbs (`fire, engage, attack, drop, strike, shoot`) → 100% REJECTED. Mixed number styles → rejected. Hypothesis: number→words→number and MGRS→speech→MGRS round-trips. Read-back for every fixture equals the canonical string |
-| **D5** | P0 | F | CoT build/parse (§2.7 table), scope guard, mesh multicast + TCP transports, SQLite outbox (compaction + replay), inbound merge (LWW on uid/time, honors stale), teammate sim, fake CoT router :18087 | Golden XML per table row. Scope guard: Hypothesis over Tracks → no `a-h-*` with machine source ever emitted. Outbox: 25 s partition then flush → order preserved, original `time` kept, PLI compacted to 1 per uid. TCP round-trip through the fake router. Multicast loopback test passes or skips with a logged reason (cloud network) |
-| **D6** | P0 | B (+all) | **`./edith up --headless`** supervisor + `scenarios/demo_vignette.yaml` (the 7-min SME vignette, [defense_sme §1.4](council/r1/defense_sme.md)) exercising all three loops with `gt_detector` | `./edith up --headless --scenario scenarios/demo_vignette.yaml --assets mock --detector gt --speed 4` → exit 0 in <5 min wall time. All `expect` pass, including: scout dispatched; vehicle alert ranked #1 and CoT `a-u-G-E-V`; D2 link lost → RTL; outbox flushed in order; "attack" rejected with 0 MAVLink commands; triple-tap → AUTO.LOITER; confirm-timeout case. `runs/<ts>/summary.json` holds loop latencies |
-| **D7** | P0 | D | Synthetic camera (NAIP homography + 6 in-house CC0 sprites + noise) → RTP H.264 5600+i + sidecar 5700+i; `fetch naip` (2×2 km range read); replay mode skeleton; companion `RtpH264Source` + JPEG inset encoder | PyAV receives ≥100 frames; sidecar `frame_id`/pts match 100%. Render ≥25 fps at 720p single-thread. PNG snapshot with GT boxes overlaid matches golden. Companion emits `video.down` 320×240 at 10–15 fps to fake_glasses |
-| **D8** | P0 | E | Model fetch (sha256: YOLOX nano/tiny/s, D-FINE-N, RT-DETRv2-R18); YOLOX + DETR adapters; tiler; latest-frame scheduler; tracker; GeoProjector with `ce_m`; fusion; novelty; `gt_detector` | Hashes match. Timing table reproduces within ±25% (YOLOX-Tiny@416 1 thread ≈62 ms). Geo: pixel→ground→pixel <0.1 px; Monte-Carlo ce calibration ≈50% inside CEP50 (±10%). Tracker on GT+noise: IDF1 ≥0.8. Fusion on a synthetic two-drone overlap: duplicate rate <1.2. Tiled frame p95 ≤350 ms here |
-| **D9** | P1 | E | `bench goal2` (WR, event recall, FA/h, TTD, CEP, duplicate rate, bootstrap CIs) + replay of VisDrone-MOT via `fetch visdrone-mot` (not committed) | Two runs, same seed → identical metrics JSON. With `gt_detector` Pd=0.95, FA=2/h → WR ≥80% and recall ≥90% (pipeline sanity). With YOLOX COCO on 3 replay sequences: numbers reported with no target (baseline for S2) |
-| **D10** | P1 | C | `AsrEngine` with ≥1 real engine (Moonshine or sherpa zipformer); replay-WAV client over real WS; synthetic noisy corpus generator (Kokoro/Piper voices, MUSAN + CC0 noise, SNR clean/20/10/5/0, license manifest); bake-off harness; Vosk confirm recognizer | `./edith bench goal1 --set clean50` → intent accuracy ≥90% on clean TTS. Per-SNR CSV produced. Integration test: WAV → proposal → WAV "confirm" → Mock dispatch. p50/p95 latency recorded (lower bound). `noise_manifest.csv` has a license on every row |
-| **D11** | P0 | G | Gradle project; `hud-core` models + renderer + lints; Kotlin contract test on shared fixtures; `emulator-desktop` with single-eye + SBS views and headless golden render | `./edith glasses test` → JVM tests pass; every valid fixture round-trips. `./edith glasses golden` renders ≥20 states × 2 views; diff ≤0.5% vs approved; APL ≤13% on persistent states; no text <16 px. Integration: headless emulator connects to the companion for 10 s and renders ≥15 snapshots |
-| **D12** | P0 | G | `platform-api`, `platform-rayneo`, `platform-generic`, `app-android` flavors; `HudActivity`, `StereoCompositor`, PTT FSM, heading fusion, mic capture, inset decoder, mDNS + manual IP; `fetch_rayneo_sdk.sh` | `./edith fetch rayneo-sdk` → hashes recorded/match; `classes.jar` contains `BaseEventActivity`, `TempleAction`. `assembleRayneoDebug assembleGenericDebug` succeed. `aapt2 dump badging` check: meta-data true (rayneo), minSdk 29, landscape, permissions. `com.ffalcon` classes only in the rayneo APK. JVM tests: PTT (300 ms / 50 px), triple-tap → stop event, heading wrap/drift, compositor geometry 1280×480 / 640×480 / phone, latest-frame queue, clock offset. Robolectric: activity starts; injected MotionEvents → PttDown/Up; mic released and `audio_source_record=off` on pause |
-| **D13** | P0 | G | **Day-one bring-up kit**: `SelfTestActivity` (T0–T18, platform §5) writing `selftest/<ts>.json`; `tools/bringup.sh` (adb install, getprop, `wm size`, dumpsys sensor/battery/thermal, pull results, push `.tflite` + LiteRT `benchmark_model`); `docs/bringup/CHECKLIST.md` (T0–T18 + voice B1–B6 + HUD measurements: luminance, leakage at 1/5/10 m, ambient sensor); result JSON schema | `tools/bringup.sh --dry-run` with a fake `adb` shim on PATH runs every step and writes `docs/bringup/dryrun.json`, which validates against the schema. A unit test asserts the self-test registry has 19 tests, each with a pass criterion. CHECKLIST lists the owner and pass threshold for every test |
-| D14 | P1 | E | TFLite export of YOLOX-Nano/Tiny (fp32/fp16/int8 static, 200 calibration frames) in a separate venv; parity test; LiteRT `benchmark_model` android_aarch64 downloaded | Parity F1 ≥0.95 vs ORT fp32 for each variant (LiteRT Python interpreter). Artifacts with sha256 in `ml/models.yaml` |
-| D15 | P1 | D | PX4 SIH launcher (`install_px4.sh`, `edith up --assets px4`), multi-instance homes, params from scenario | **Requires user approval to run the PX4 binary.** Then: the contract suite passes against 2 SIH instances; the jam scenario triggers `NAV_DLL_ACT`; `demo_vignette` with `--assets px4` passes |
-| D16 | P1 | E | `bench placement` harness (JSONL schema shared with glasses `BenchActivity`; companion placement measured here) | `bench placement --placement companion` writes per-stage timestamps and summary p50/p95. Glasses JSONL import validates against the schema |
-| D17 | P2 | D | Tier B scripts + SDF world generated from the scenario origin | SDF lints; documented run on a GPU laptop |
-| D18 | P2 | C | TTS read-back via sherpa-onnx Piper (permissive voice) on `audio.down`; mic gating | TTS never says "confirm"; mic muted during playback (test) |
-| D19 | P1 | F | Cost model v0: `docs/cost/model.csv` + `cost_model.py` (full kit, incremental kit, lite kit, Phase 0 spend) | Totals reproduce; every row has a source URL or UNVERIFIED; the script fails if any row lacks both |
-| D20 | P2 | F | OpenTAKServer connector config + docs | TCP 8087 client tested against the fake router; OTS install doc |
-| D21 | P2 | B/D | `follow` verb end to end (schema exists) | Mock follows a moving entity at standoff ≥30 m ±5 m |
+| **D0** | P0 | A | uv workspace with every §4.2 dependency declared (UNVERIFIED wheels as extras); `./edith` CLI with all subcommands (stubs allowed); ruff; `.gitignore`; `docs/OWNERS.yaml`; lint suite; LICENSES.md; commit pushed to `origin main` | `./edith doctor` → exit 0 and prints Python 3.13, Java 21, Gradle 8.14.3, "Android SDK platforms 34,35,36; build-tools 36.0.0", adb path. `uv sync --all-extras` → 0. `ruff check .` → 0. `./edith test unit` (Python only) → 0. `git check-ignore data/x models/x runs/x dist/x glasses/platform-rayneo/libs/x` → all ignored. `./edith test lint` → owners (no overlap, full coverage), no-binaries and truth-import lints pass. `git ls-remote origin main` matches local HEAD |
+| **D1** | P0 | A | Schemas v1 for every type in [interfaces §3–4](spec/interfaces.md#3-websocket-messages-7400-v1ws); ≥1 valid + ≥1 invalid fixture per type; pydantic models; `edith_common.geo` (ENU/LLA/MGRS, bearing, clock, range, CE90 helpers, hae); `ScaledClock` | `./edith test contract` → every valid fixture passes and every invalid one fails (≥50 fixtures); pydantic round-trip is byte-stable. Geo: ENU↔LLA <0.01 m; ENU→MGRS→ENU <1 m; `clock(62°)=="2 o'clock"`; origin → `16TCK6100236799`. ScaledClock: two processes started with the same env agree within 5 ms at speed 4 |
+| **D13a** | P0 | G | **G0-critical bring-up kit:** `fetch_rayneo_sdk.sh [--from zip]` → local m2 repo + POM; `:selftest` module (T5, T6, T7, T9, T13, T14 implemented); `bringup.sh` (T0–T4 host-side; `adb install -r -g`; provisioning `am start --es ws --es token`; pull results; `--tier g0`); `CHECKLIST.md`; `INSTALL.md`; `./edith glasses dist --selftest` | With the sample zip (`--from` or URL): sha256 matches `sdk.lock`; the POM lists the 7 dependency groups; `xr2-platform.jks` absent. `./gradlew :selftest:assembleRayneoDebug` succeeds; `aapt2 dump badging` shows mercury meta-data=true, minSdk 29, landscape, cleartext config, no WRITE_SETTINGS. The registry test asserts 19 tests (T0–T4 in bringup.sh, T5–T18 in the APK), each with a pass criterion and a `g0` tag on T0/T5/T6/T7/T9/T13/T14. `bringup.sh --dry-run --tier g0` with a fake-adb shim writes `docs/bringup/dryrun.json` valid against its schema. `dist/edith-selftest-rayneo-debug.apk` + `SHA256SUMS` produced. Without the SDK: a clear message, and `assembleGenericDebug` still succeeds |
+| **D2** | P0 | D | `sim/profiles/quad_sim.yaml`; `edith_common.px4`; scenario loader v2 + **`edith scenario lint`**; seeded mover; GT logger; **MockVehicle** (§2/§6 of the sim spec, reads the profile, DLL failsafe only when armed and airborne); **linkshaper** (MAVLink, `tak`, `video` windows, wire log); `scenarios/demo_vignette.yaml` (+ `demo_jam.yaml`, `demo_scout.yaml`) | `pytest sim -q` passes. In-process Mock, same seed twice → identical sha256 of mover + jam + Mock trace. Mock heartbeat `autopilot=12, type=2`; orbit → `POSCTL.ORBIT`; reposition → LOITER; RTL → LAND → disarm; armed and idle disarms at 10 s; disarmed Mock takes no DLL action. `edith scenario lint scenarios/*.yaml` → 0, and the committed infeasible copy → non-zero naming the expect. Linkshaper: 0 packets pass in-window; the wire log records every message with direction and class |
+| **D3a** | P0 | B | Gateway, bus, eventlog, world, config; pymavlink `AssetAdapter` + `outbound.py` + GCS heartbeat + MAVLink link monitor + params-after-boot read-back; `fake_glasses.py` (emits `card_shown`); supervisor skeleton | The contract suite vs Mock (arm → takeoff → goto → orbit → search → hold → rtl → land; landed + search; landed + orbit) passes in <60 s at 10×. Classifier: every MAVLink msgid in the adapter maps to MOTION/SAFE/CONFIG; an unlisted msg is dropped and logged; PARAM_SET while armed is blocked. Link: `degraded` 1.5 s after silence, `lost` at COM_DL_LOSS_T, liveness on any message. fake_glasses gets hello + snapshot <500 ms; heartbeat 2 Hz ±10%. Param mismatch on read-back → abort |
+| **D3b** | P0 | C | Safety core: gate, proposal FSM, `confirm_rule.py`, safety stop with task cancellation, invariant monitor; tested with a recording `FakeAdapter` (no D2 dependency) | Hypothesis ≥1,000 examples each: I1–I8 hold. All 7 press-outcome rows ([voice §5](spec/voice.md#5-confirmation-c48-single-owner-companionedith_companionsafetyconfirm_rulepy)) pass. Rejected: confirm without `card_shown`; press started in lockout (`held_ms` estimate); `ctx.proposal_id` mismatch; "confirmed"; `ptt_up` after expiry; two-finger hold 900 ms; temple confirm while disabled. Text suite: 10,000 non-confirm utterances → 0 confirms. Stop ≤500 ms, pending SUPERSEDED, and a running follow re-issue loop is cancelled before the hold (I7). double_tap@0 + triple_tap@250 ms → SafetyStop only, 0 Feedback. 3 taps in 600 ms → stop only. Mission upload is emitted only after Confirmation. Hold for a lost asset → not sent, toast. RTL/land need confirm |
+| **D3c** | P0 | H | `alerts` (ranker, suppression, flood collapse, budget, card-open queueing, bare-response scoping, `gesture_dismiss`) + `hud` projector (`HudState` v2 fields, inset policy, declutter, night) | Ranker: 3 s dwell, +0.2 pre-empt, 10-min suppression with escalation/closure overrides, collapse >3 in 10 s, budget counter. While a card is open a CAUTION queues (`+1`) and a WARNING invalidates. Bare `watch` with no alert shown → NOOP + `NO ALERT`. No declutter level hides card/stop toast/voice/WARNING. WARNING has `gesture_dismiss=false`. Gesture dismiss → `undo` for 3 s; `slide_back` restores the alert. Projection: 10 world snapshots → golden HudState JSON |
+| **D4** | P0 | C | Normalizer (`spoken` + `written`), grammar v2, resolver (clock/MGRS/gazetteer + aliases/relative/teammate/frozen contact), read-back rows; ≥400 synthetic fixtures + **≥150 Moonshine-captured fixtures** (`capture_asr.py` on Kokoro TTS, committed as text) | `pytest companion/tests/intent -q` → 100% pass, both profiles. Rejected lexicon (all 19 entries) → 100% REJECTED; "repeat" is not say-again. Stop variants ("abort abort", "stop, stop", "all stop", "drone two hold position") → stop; "drone two orbit … abort" → spotted stop scoped to D2. `follow contact` → REJECTED. Mixed number styles → rejected (spoken). **Every read-back row ≤490 px and every banner row 1 ≤400 px measured on bundled B612 (Pillow)**. Hypothesis number and MGRS round-trips |
+| **D5** | P0 | F | CoT build/parse (XML + takproto v1 inbound), scope guard, uids, retraction, transports (mesh, mesh-emu, tcp), `LinkMonitor`, outbox, inbound merge, `cot_router.py` (UDP 18088 fan-out + TCP 18087, answers `t-x-c-t`, logs received), teammate sim (VIKING, `m-s`, EXERCISE) | Golden XML for every table row. Scope guard (Hypothesis): no `a-h-*` from a machine source; no CoT for an `assoc_friend_uid` track. Dismiss → `t-x-d-d` within 1 s; a lost track → delete. mesh-emu partition of 25 s: `lost` ≤3 s after start, `ok` ≤2 s after end; router log shows ≥5 queued events flushed in order, original `time`, expired events dropped, latest live-track states re-sent. TCP: 2 missed pongs → `lost`. A takproto v1 fixture parses. The multicast loopback test passes or skips with a logged reason |
+| **D6** | P0 | B | `./edith up --headless` supervisor complete; the vignette passes end to end with gt, video off | `./edith up --headless --scenario scenarios/demo_vignette.yaml --assets mock --detector gt --speed 4` → exit 0 in <5 min wall, with **every** expect in [sim §7](spec/sim.md#7-scenariosdemo_vignetteyaml-authored-in-d2) passing: scout dispatched; D2 in POSCTL.ORBIT; timeout case expired with 0 MOTION; 0 WARNING and 0 friend CoT during overwatch, with ≥1 association; deer alert, then dismiss → CoT not live and no re-alert; vehicle alert shown with `a-u-G-E-V`, then MARK → `h-e`; TAK lost/ok, router flush in order; D2 lost → AUTO.RTL; "attack" rejected with 0 MOTION; triple-tap → both AUTO.LOITER; 0 invariant violations. `runs/<ts>/summary.json` holds loop latencies. Peak CPU <170% of 2 cores (sampled) |
+| **D7** | P0 | D | simd synthetic camera (NAIP homography + 6 in-house CC0 sprites incl. persons for teammates + noise; stabilized gimbal); RTP H.264 with SEI `frame_id`, sidecar with `pose_est` + nav noise; FrameTruth JSONL; SDP; `fetch naip`; replay skeleton; video wall-capped at 15 fps | A PyAV test receiver joining **mid-stream** matches ≥99% of frames to sidecars by SEI (verified by a test-only frame-ID barcode); the pts-anchor fallback is tested too. Render ≥25 fps at 720p single-thread. A PNG snapshot with GT boxes matches golden. At `--speed 4` the encoder emits ≤15 fps of wall time. Sidecar pose error statistics match the nav-noise σ within 10% |
+| **D8** | P0 | E | Model fetch (sha256; YOLOX nano/tiny/s, D-FINE-N, RT-DETRv2-R18); YOLOX adapter (416²); tiler with IOS merge; scheduler; FrameSource (RTP+SEI); OffloadDetector; **ground-plane tracker**; geo CE90; fusion; novelty; **friendly association**; inset encoder (night green map); `gt_detector` (confusions, clutter) | Hashes match. YOLOX-Tiny@416 1 thread, measured in isolation, within ±25% of 62 ms; tiled frame p95 ≤350 ms isolated. Geo: pixel→ground→pixel <0.1 px with the stabilized gimbal at a 20° bank; Monte-Carlo with nav noise: **90% ±3%** inside ce_m. Tracker on synthetic GT: lawnmower at 8 m/s, 60 m AGL, 2 Hz — a stationary target and a 10 m/s target are each confirmed ≤2.5 s, IDF1 ≥0.8. Fusion duplicate rate <1.2 on a two-drone overlap. A teammate in FOV near a fresh PLI → 0 alerts, 0 CoT. Scheduler: boost to 4 Hz for 5 s; 1 Hz cap during PTT. Persistent clutter above τ_c becomes a confirmed track (FA path exercised). No test needs `data/` |
+| **D10a** | P0 | C | Moonshine `AsrEngine` (0.1.6, model pinned in `voice/models.lock.yaml`); replay-WAV client over the real WS; **audio lure suite**; gazetteer alias check | Lure suite (≥40 confusables × 3 Kokoro voices × clean/10/5/0 dB through Moonshine + `confirm_rule`) → **0 confirms**; true-"confirm" false-reject rate reported. Every gazetteer name in `demo_vignette.yaml` parses from Moonshine at clean and at 10 dB on 3 voices. Integration: WAV → proposal → `card_shown` → WAV "confirm" → Mock dispatch. Latency p50/p95, idle and under `edith up`, written to `runs/` |
+| **D11** | P0 | H | Gradle `hud-core` + `emulator-desktop`; renderer via GraphicsLayer; `Glyphs.kt`; lints; Kotlin contract tests; headless goldens + contact sheet | `./edith glasses test` → JVM tests pass and every valid fixture round-trips. `./edith glasses golden` renders ≥24 states × 2 views, diff ≤0.5% vs approved (Linux). Lints: APL per definition (≤13% persistent, ≤3% night); every text run inside its region; nothing in the clear zone except the caret band; text ≥16 px; stroke ≥2 px; every codepoint in the B612 cmap; no pointer modifiers in hud-core. The emulator connects to the companion for 10 s and renders ≥15 snapshots |
+| **D12** | P0 | G | `platform-*`, `app-android` flavors; `HudActivity` with dispatchTouchEvent → `InputFsm`; PTT pre-roll; BT HID PTT; heading fusion; mic; `StereoCompositor` (measured slots); inset decoder; provisioning via intent extras; manifest fixes; `./edith glasses dist` | `assembleRayneoDebug assembleGenericDebug` succeed; `com.ffalcon` classes only in the rayneo APK. aapt2: meta-data, minSdk 29, landscape, cleartext network config, AppCompat theme, permission set exact. JVM tests: pre-roll frames from DOWN−0 ms are included in `audio.up`; UP <300 ms → nothing sent and mic released; pointerCount 2 → no PttDown and no voice session; two-finger hold `duration_ms` from raw events; triple-tap emits `triple_tap` at once; double-tap carries `gesture_seq`; compositor slots for 1280×480, 640×480 and a phone window; heading wrap/drift; latest-frame queue. Robolectric (sdk 31): activity starts with its theme; intent extras → persisted connection config; mic released and `audio_source_record=off` on pause. `dist/` holds both APKs + SHA256SUMS |
+| **D13b** | P0 | G | Full self-test T5–T18 plus `CHECKLIST.md` (T0–T18, voice B1–B6, HUD luminance/leakage, BT key test, T5 circle-aspect, T7 raw triple-tap log and DOWN→first frame ≤100 ms, T16 swatches `fg/friend/#FFD400/#FF3030`, T18 `CURRENT_NOW` sign/units/period) | Registry test: 19 tests with pass criteria and owners. `bringup.sh --dry-run --tier all` validates. CHECKLIST lists owner and threshold per test |
+| D9 | P1 | E | `bench goal2` on composed timelines ([eval §2](spec/eval.md#2-g2-watch-reduction-c70)); `ml/splits.yaml`; operator model R=3/6/10 s; image-space recall on replay; Poisson FA CI | Same seed twice → identical metrics JSON. gt Pd 0.95, FA 2/h at 10% duty → WR ≥80% and recall ≥90%. With `data/` present: YOLOX COCO on 3 composed missions reported without a target; without it the test skips with `needs_data` |
+| D10b | P1 | C | `sherpa-onnx` engine; corpus generator (own verbalizer, ≥100 paraphrases); noise per [voice §6](spec/voice.md#6-corpus-and-noise-c67-c69) with `noise.lock.yaml`; SNR to −5 dB; bake-off; Vosk decoy grammar + AND-agreement | `bench goal1 --set clean50` → intent ≥90%. Per-SNR CSV produced. Every noise row has a license. Lure suite repeated with AND-agreement → 0 confirms |
+| D14 | P1 | E | `uv venv -p 3.12`; YOLOX 576×320 ONNX export + TFLite (fp32/fp16/int8, 200 calibration frames); parity | Parity F1 ≥0.95 vs ORT fp32 per variant. 576×320 latency measured vs 416². Artifacts in `models.yaml` with sha256, `license` and `derived_from` |
+| D15 | P1 | D | PX4 SIH (`install_px4.sh`, params after boot + read-back, `record-px4`). **Needs user approval here (L14)**; runs on a team laptop regardless | Contract suite `--assets px4` passes against 2 instances; the jam triggers `NAV_DLL_ACT`; `demo_vignette` with `--assets px4 --speed 1` passes; the Mock-vs-PX4 trace diff has no mode or ACK mismatches |
+| D16 | P1 | E | `bench placement` (JSONL shared with BenchActivity; P2 sends the same detector input; energy rule) | Per-stage timestamps and p50/p95; an energy run refuses `usb_connected=true`; glasses JSONL import validates |
+| D19 | P1 | F | Cost model v0 with `basis` column; capex / opex / 5-yr TCO | Totals reproduce; the script fails on a row missing a basis or a source/UNVERIFIED |
+| D17 | P2 | D | Tier B scripts + SDF from the scenario origin; `telemetry_interp` pose | SDF lints; run documented on a GPU laptop |
+| D18 | P2 | C | TTS via sherpa-onnx (permissive voice), mic gating | TTS never says "confirm"; mic muted during playback |
+| D20 | P2 | F | OTS connector + docs | TCP ping/pong against the fake router; install doc |
+| D21 | P2 | C+B | `follow me/teammate` end to end (grammar + gate in C; `follow(uid_stream)` in B) | Mock follows the VIKING 1-2 PLI at 30 m ±5 m; a stop cancels it within 500 ms (I7); a follow of a track → REJECTED |
+| D22 | P2 | B | Pareto harness (linkshaper bandwidth/loss sweep) | One sweep point reproduces |
+| D23 | P2 | F | DETAILS → SALUTE draft on `/ui/touch` (Size, Activity, Location MGRS, Unit=UNKNOWN, DTG Z, Equipment) | Draft fields populated from a track fixture |
 
 ---
 
-## 6. Evaluation plan
+## 6. Evaluation
 
-### 6.1 G1: voice tasking
-| Item | Protocol |
-|---|---|
-| Synthetic corpus (now → W3) | 2,000 grammar-sampled commands + ~30 paraphrase templates per verb; Kokoro-82M and Piper voices at 0.9/1.1 speed; MUSAN, CC0 Freesound and ESC-50 noise (NC clips eval-only) at clean/20/10/5/0 dB SNR plus a "glasses channel" step. Bar at 10 dB: intent ≥95%, slot exact ≥90%, confident-wrong ≤0.5% ([voice §3](council/r1/voice.md)). Ranks engines; does not prove G1 |
-| Real corpus (Dec → W2) | B6: ≥3 speakers × 100 commands through the glasses' mics, indoors and in wind; playback at 60/75/85/95 dB(A) with the SPL meter visible; all-party consent (Pennsylvania law, [defense_sme §1.7](council/r1/defense_sme.md)) |
-| Metrics | WER, intent accuracy, slot exact-match, **confident-wrong rate** (safety metric), say-again rate, confirm FA/FR, per-stage p50/p95 latency from the event log |
-| False activation | ≥2 h replayed chatter with PTT pressed at random; 10,000-utterance adversarial suite; study lure trials. Target 0 executions |
+Protocols are in [spec/eval.md](spec/eval.md).
 
-### 6.2 G2: watch reduction ([ml §1.4](council/r1/ml.md))
-- **AFS** (attended feed-seconds) is logged from `hud.event` inset open/close. In baseline B0 all N feeds are visible all mission (AFS = N·T); in condition E feeds are hidden and the inset appears only on alert or request.
-- **Event:** an entity is detectable once in FOV, ≥12 px tall and unoccluded ≥1 s; it is recalled if a matching alert (same class, ≤20 m or ≤2·ce) fires within 10 s. Recall is also reported by pixel height (8–32 px).
-- **Protocol:** 10 seeded missions × 10 min × 2 drones on replay clips (4–8 entities, 1 cross-drone overlap, 2 distractors, long empty stretches); bootstrap 95% CIs; sweep τ_c and persistence, then **freeze the operating point at W8**. WR is always reported with recall and FA/h, so "never alert" cannot game it.
-
-### 6.3 Edge vs offload benchmark
-| Placement | Path |
-|---|---|
-| P1 (default) | Detector on companion; glasses render only |
-| P2 | Companion relays 320×240/640×360 JPEG to glasses; glasses detect; Detections return |
-| P3 | Offload server (second laptop / Penn GPU) over Wi-Fi, same API (optional) |
-| P4 | Glasses camera → on-glasses detection (point at a monitor replaying clips for repeatability) |
-
-- **Measurements:** per-stage timestamps; capture→alert p50/p95; sustained fps and drops; parity F1 ≥0.95 vs ORT fp32 and accuracy vs GT; bytes/s each way; glasses energy (`CURRENT_NOW` × voltage at 1 Hz minus idle baseline → mJ/inference, %/h); thermal status/headroom; 20-min soak per config.
-- **Glasses runtimes, in order** (all UNVERIFIED on AR1): LiteRT CPU 1/2/4 threads → LiteRT GPU fp16 → NNAPI → QNN if its libraries load (LiteRT's QNN list omits AR1). Hypothesis: P1 wins on latency and battery; P2 is viable only for Nano-class models at ≤2 Hz.
-- **Research contribution for the mentor** ([pm §1.2](council/r1/pm.md)), W8: a Pareto curve of alert latency and recall vs link bandwidth/loss (50 kbps–5 Mbps, 0–30%, via linkshaper) for stream-video-then-detect, detect-at-source + detections + thumbnails, and detect-on-companion.
-
-### 6.4 G3: HUD user study ([hud §5](council/r1/hud.md))
-| Item | Spec |
-|---|---|
-| Design | Within-subjects, counterbalanced. **Glasses HUD vs the same E.D.I.T.H. software on a chest-mounted phone (`generic` flavor) + earbud** (C21), both driven by one CoT scenario. Optional ablation: ranked vs all alerts. ATAK-CIV shown only in SME think-alouds |
-| N | **18 target** (paired, d=0.7, 80% power); **floor 12** with effect sizes and CIs (C22); plus 3–5 SME think-alouds (ROTC/veterans as civilians) |
-| Protocol | 10-min scripted scenario walking a marked indoor or Penn Park loop. Stressors: call-sign dual task, 75–80 dB(A) noise, time pressure, a dusk block. Tasks: respond to alerts, navigate to bearings, issue 4 confirmed drone tasks, call out peripheral LED events. Lures: "confirm"/"cancel" spoken by script or confederate while a card is open |
-| Measures | Alert response time, hits/misses/wrong actions; SAGAT (3 freezes); SART, raw NASA-TLX, SUS, SSQ; heads-up time from IMU pitch; walking speed; peripheral detection; accidental confirms; 2 s legibility |
-| Analysis | Mixed model on response time; Wilcoxon on questionnaires; exclude photosensitive epilepsy; record acuity and color vision |
-| Optional G2 block | 10 min: B0 feed grid on a laptop vs E, operator-reported events |
-
-**IRB timeline** (owner Alisha, with Prof. Zhao as faculty PI; the PI requirement is UNVERIFIED):
-
-| Date | Step |
-|---|---|
-| Dec 4 | Request a determination; at Penn, exemption is not self-determined ([Pennbook](https://catalog.upenn.edu/pennbook/human-subject-research/)). Likely Exempt Cat. 3, possibly expedited because of walking plus noise |
-| Dec 18 | CITI training done (all 5) |
-| Jan 8 | Protocol + consent + recruitment text submitted |
-| Feb 19 | Approval target (before the W6 pilot) |
-| Feb 22–28 | Pilot with 3–5 users |
-| Mar 15–Apr 4 | Main study |
-
-Budget: about 23 × $20.
-
-### 6.5 G4: cost model outline ([pm §1.7](council/r1/pm.md))
-- **Anchors:** IVAS was up to $22B for ~120k headsets (lifecycle value, not unit price; hardware ~$80k/unit); Skydio X10D ≈$21k/system. Compare unit to unit and lifecycle to lifecycle.
-- **BOM lines per kit:** glasses, companion EUD, radio (usually already owned), software per seat-year, power/cables, training/sustainment, amortized accreditation; drones separate.
-- **Scenarios:** incremental kit ≈$7–12k (trusted glasses $2–5k + EUD $1.5–2.5k, both UNVERIFIED, + software $3–5k/seat/yr); full kit ~$25k only with a MANET radio (pricing UNVERIFIED); lite kit ~$8k (e.g. goTenna Pro X, $849).
-- **Unit economics:** software ARR per seat; hardware pass-through at 15–25%; 30–100 seats per pilot; sales-cycle cash. **Phase 0 spend:** RayNeo $1,099–1,399 plus <$2k accessories. **NC-data line:** Phase 1 retraining on owned/synthetic data.
+- **G1 (C69):**
+  - The **primary number comes from naive study participants**. The B6 team corpus is engineering data, reported separately.
+  - Intent success and confident-wrong are pre-registered.
+  - SPL is Leq30 dB(A) at the ear.
+  - The audio lure suite replaces text-only evidence for "0 executions".
+- **G2 (C70):**
+  - Missions are composed real-footage timelines at pre-registered duty cycles of 5/10/20%.
+  - A scripted operator model holds the inset for R = 6 s (3 s and 10 s also reported).
+  - FA/h counts real seconds only.
+  - Replay recall is matched in image space, and replay geo is `pseudo`.
+  - CEP90 is synthetic-only, with nav noise.
+  - The person missions fly at 45–50 m and −45° pitch.
+- **Edge vs offload (C71):** P2 sends the same detector input as P1. Energy is measured over Wi-Fi adb with USB unplugged.
+- **G3 (C72):**
+  - The baseline is a **phone-native layout** of the same `HudState`, frozen at W5.
+  - Both arms use the same BT PTT button, earbud and earcon, with a haptic on the phone.
+  - The primary DV is alert onset → PTT-down of a correct response.
+  - Lures: ≥192 in total. Wrong-read-back catch rate is also reported.
+  - Temple gestures are tested in a separate block.
+  - Dusk is a sub-study with n ≥ 6.
+  - A spotter accompanies every walking session.
+- **G4 (C79):** capex, opex and TCO are reported separately. Software pricing is a willingness-to-pay hypothesis.
 
 ---
 
 ## 7. Semester plan
 
-Penn Spring 2027 starts **Wed Jan 20**, spring break is Mar 6–14, and the last class is May 4 ([pm §1.5](council/r1/pm.md); UNVERIFIED against the Almanac; C23). Planning assumptions: final demo the week of Apr 26, feature freeze Apr 16, demo freeze Apr 23.
+Penn Spring 2027 starts **Wed Jan 20**; spring break is Mar 6–14; the last class is May 4 (UNVERIFIED, C23). The final demo is assumed for the week of Apr 26, with feature freeze Apr 16 and demo freeze Apr 23. Thanksgiving removes Nov 25–29, and Dec 10–17 is reading days and finals, so December gates are front-loaded.
 
-**Owners:** **Arjun** HW/platform, HAL, power, network, SITL host, mmWave · **Anshuman** vision/ML, architecture, integration lead, edge vs offload · **Alisha** HUD UX, alert policy, IRB, study · **Om** voice/NLP, grammar, confirmation safety, noise eval · **Simon** systems/commercial, CoT/ATAK interop, cost model, interviews/CRM, demo narrative.
+**Owners (L23, C73):**
+
+| Person | Owns |
+|---|---|
+| **Arjun** | Glasses platform (G), companion runtime and **integration lead** (B), SITL host and demo laptop, **Pareto study lead**, mmWave |
+| **Anshuman** | Architecture and contracts (A), vision/ML (E), G2, edge vs offload, operating point |
+| **Alisha** | HUD (H: hud-core, emulator, alerts, HUD policy), IRB, study, phone-native layout |
+| **Om** | Voice/NLP, grammar, **safety FSM and confirmation** (C), noise eval, G1 |
+| **Simon** | **Sim and scenarios** (D), CoT/ATAK interop and cost (F), interviews/CRM, demo narrative |
 
 ### 7.1 Now → December
 
 | Dates | Work | Owner | Gate |
 |---|---|---|---|
-| Nov 23–29 | Council builds Phase B (D0–D13). Draft the IRB determination request; interview list; buy router, power bank, USB-C data cable, SPL meter, speaker, IR thermometer | Council; Alisha; Simon; Arjun | — |
-| ~Nov 30–Dec 4 | **Glasses arrive → day-one bring-up** (D13: T0–T18, B1–B6). Retire A1. IRB request sent Dec 4 | Arjun lead; Om (T9/B*); Alisha (T5/T16); Anshuman (T18) | — |
-| Dec 5 | A2: battery/thermal for a 10-min demo + 20-min session (T14/T15) | Arjun | — |
-| Dec 10 | **G0 platform go**: T5/T6/T7/T9/T13 pass or a workaround is chosen (SBS vs mono, PTT hold vs toggle). Native Kotlin confirmed; Unity closed | Arjun + Anshuman | G0 |
-| Dec 12 | A3: mic ASR at ≥85 dB(A) (20 commands × 5 levels × 3 speakers). A4: link p95 voice→HUD ≤2.5 s. Contracts v0 frozen | Om; Arjun; Anshuman | — |
-| by Dec 17 | Semester-1 deliverable: PLAN + hardware characterization memo + ≥5 interviews | All; Simon | — |
+| Nov 23–29 | Council builds Phase B, D13a and D12 dist first. Draft the IRB request. Buy router, power bank, USB-C data cable, SPL meter, speaker, IR thermometer, BT HID PTT button, forearm phone mount | Council; Alisha; Arjun | — |
+| ~Nov 30–Dec 4 | **Glasses arrive.** First 3-hour session: G0-critical T0, T5, T6, T7, T9, T13, T14 from the handed-over APK (no Gradle). IRB request sent Dec 4 | Arjun lead; Om (T9); Alisha (T5) | — |
+| Dec 5 | Remaining T-tests and B1–B6 begin; A2 battery/thermal (T14/T15) | Arjun, Om | — |
+| Dec 10 | **G0 platform go:** T5/T6/T7/T9/T13 pass or a workaround is chosen (SBS vs mono, PTT hold vs toggle, temple confirm on/off). Native Kotlin confirmed | Arjun + Anshuman | G0 |
+| Dec 12 | All T-tests done. A3: mic ASR at ≥85 dB(A). Contracts v0 frozen. **Demo laptop (native Linux) designated and `edith test e2e-px4` green on it** (C78) | Om; Anshuman; Arjun | PX4 gate |
+| by Dec 17 | PLAN, hardware memo, ≥5 interviews; **1-hour handoff per WS owner from `docs/walkthroughs/`** (C83) | All; Simon | — |
+
+**Interview guardrails (C82):**
+- Interviews are unclassified and in a personal capacity.
+- No TTPs, unit specifics or CUI.
+- No ITAR-marked documents.
+- Any sponsor agreement goes through Penn Export Compliance (fundamental-research exclusion).
 
 ### 7.2 Winter break (Dec 18 – Jan 19)
-Arjun holds the glasses; everyone else uses the emulator and the `generic` flavor.
 
-| Person | Break deliverable |
+Arjun holds the glasses; everyone else works on the emulator and `generic`.
+
+| Person | Deliverable |
 |---|---|
-| Arjun | Walking skeleton on the glasses; on-glasses TFLite numbers (T18) |
-| Anshuman | VisDrone fine-tune run #1 (Colab/Penn); `bench goal2` baseline |
-| Om | ASR bake-off on synthetic + B6 data |
-| Alisha | HUD v1 from T16 daylight data |
-| Simon | ATAK-CIV interop on the LAN; cost model v0; ≥10 interviews |
+| Arjun | Walking skeleton on the glasses; T18 on-glasses TFLite numbers; demo laptop PX4 soak |
+| Anshuman | VisDrone fine-tune #1; `bench goal2` baseline on composed missions |
+| Om | ASR bake-off on synthetic + B6 data; lure suite with AND-agreement |
+| Alisha | HUD v1 from T16 data; phone-native layout draft |
+| Simon | ATAK-CIV LAN interop (incl. `t-x-d-d` delete and `how` rendering); cost model v0; ≥10 interviews |
 
 **Exit gate G1 (Jan 19):** walking skeleton end to end on the glasses: voice → confirm → SITL → HUD → ATAK.
 
@@ -786,72 +603,122 @@ Arjun holds the glasses; everyone else uses the emulator and the `generic` flavo
 
 | Wk | Dates | Milestones (owner) | Gate |
 |---|---|---|---|
-| 1 | Jan 20–24 | Skeleton demo to the TA; contracts v1 frozen (Anshuman); IRB status (Alisha) | Fri integration #1 |
-| 2 | Jan 25–31 | Glasses-mic noise corpus v1 at 60/75/85/95 dB(A) (Om, Arjun); HUD v1 layout on device (Alisha); on-glasses bench JSONL (Arjun, Anshuman) | — |
-| 3 | Feb 1–7 | ASR engine chosen; grammar v1 frozen (≤20 intents) + Vosk confirm (Om); fine-tuned triage baseline (Anshuman); CoT→ATAK-CIV live (Simon) | Fri integration #2 |
-| 4 | Feb 8–14 | **G2 gate**: WR ≥80% at recall ≥90% on replay, else fallback (D-FINE tier, more tiles, narrower claim) (Anshuman). Link-degradation profiles (Arjun). Sim+real training mix starts | G2 |
-| 5 | Feb 15–21 | Touch fallback for every intent (Alisha, Arjun); ranker v1 tuned (Anshuman, Alisha); IRB approval target Feb 19 | Fri integration #3 |
-| 6 | Feb 22–28 | Pilot study, 3–5 users (Alisha); mmWave go/no-go (Arjun); cost model v0 review (Simon) | — |
-| 7 | Mar 1–5 | **G3 feature-complete v1**; eval harnesses automated (all); internal demo | G3 |
-| — | Mar 6–14 | Spring break: nothing scheduled | — |
-| 8 | Mar 15–21 | Pilot fixes; **operating point frozen** (Anshuman); edge-vs-offload + Pareto runs (Anshuman, Arjun); study sessions begin (Alisha) | — |
-| 9 | Mar 22–28 | Main study (Alisha lead; all run sessions) | — |
-| 10 | Mar 29–Apr 4 | Main study completes (N=18 target) | — |
-| 11 | Apr 5–11 | Noise curve + false-activation results (Om); G2 report (Anshuman); study analysis (Alisha); cost model v1 (Simon) | — |
-| 12 | Apr 12–18 | **Feature freeze Apr 16**; dry run #1 with mentor/TA | G4 |
-| 13 | Apr 19–25 | **Demo freeze Apr 23**; backup video of every live segment; poster/report; dry run #2 | G5 |
-| 14 | Apr 26–May 2 | **Final demo** (date to confirm with course staff) | — |
+| 1 | Jan 20–24 | Skeleton demo to TA; contracts v1 frozen (Anshuman); IRB status (Alisha) | Fri integration #1 (Arjun) |
+| 2 | Jan 25–31 | Glasses-mic corpus at 60/75/85/95 dB(A) Leq30 (Om, Arjun); HUD v1 on device (Alisha); on-glasses bench (Arjun, Anshuman) | — |
+| 3 | Feb 1–7 | ASR chosen, grammar v1 frozen + Vosk decoys (Om); fine-tuned baseline (Anshuman); CoT→ATAK-CIV live (Simon) | Fri integration #2 |
+| 4 | Feb 8–14 | **G2 gate:** WR ≥80% at recall ≥90% at 10% duty, else fallback (D-FINE tier, 576×320, narrower claim) (Anshuman); link profiles (Arjun) | G2 |
+| 5 | Feb 15–21 | Touch fallback for every intent (Alisha, Arjun); ranker v1 (Alisha, Anshuman); **phone-native arm frozen** (Alisha); IRB approval target Feb 19 | Fri integration #3 |
+| 6 | Feb 22–28 | Pilot, 3–5 users (Alisha); mmWave go/no-go (Arjun); cost review (Simon) | — |
+| 7 | Mar 1–5 | **G3 feature-complete v1**; harnesses automated; internal demo; **no autopilot upgrades after Mar 5** | G3 |
+| — | Mar 6–14 | Spring break | — |
+| 8 | Mar 15–21 | Operating point frozen (Anshuman); edge-vs-offload (Anshuman) + Pareto (Arjun); study begins (Alisha) | — |
+| 9–10 | Mar 22–Apr 4 | Main study (Alisha lead, all run sessions); dusk sub-study | — |
+| 11 | Apr 5–11 | G1 results from study utterances + noise curve (Om); G2 report (Anshuman); study analysis (Alisha); cost v1 (Simon) | — |
+| 12 | Apr 12–18 | **Feature freeze Apr 16**; dry run #1 | G4 |
+| 13 | Apr 19–25 | **Demo freeze Apr 23**; backup video of every live beat, including the SAR re-skin; dry run #2 | G5 |
+| 14 | Apr 26–May 2 | **Final demo** (date to confirm) | — |
 
-**Final demo** (~8 min; [pm §1.6](council/r1/pm.md), [defense_sme §1.4](council/r1/defense_sme.md)): problem → one architecture slide → **live**: beside 85 dB(A) babble, "Drone one, scout NAI one" → card → CONFIRM, drone moves in SITL and stock ATAK-CIV; vehicle alert → WATCH/MARK; planted false positive → DISMISS; a judge reads a paragraph full of "confirm/drone/go" and nothing executes; same task silently by touch; jam → degraded → resync with original timestamps; "attack" → Unsupported; triple-tap ALL HOLD → evidence slides (G1 curve, G2 WR vs recall, G3 A/B, Pareto) → cost model and roadmap, with the same APK on a phone → scope-boundary slide. A SAR "missing hiker" re-skin is scripted too.
+**Final demo beat sheet (C78):** ~8 min, of which ~4 min is live. Problem → one architecture slide → live beats:
+
+| Beat | Live content | Time |
+|---|---|---|
+| Scout | "Drone one, scout NAI one" beside 85 dB(A) babble → card → CONFIRM | 45 s |
+| Alert | Vehicle alert → WATCH → MARK, visible on stock ATAK-CIV | 40 s |
+| False positive | Planted false positive → DISMISS, and it disappears from ATAK | 15 s |
+| Lure | The operator holds PTT with a card open while a judge reads a paragraph full of "confirm"; nothing executes | 30 s |
+| Silent task | Same task silently by touch (temple, or `/ui/touch` on the forearm phone if T7 failed) | 30 s |
+| Jam | Jam → degraded → resync with original timestamps (`demo_jam.yaml`, `COM_DL_LOSS_T: 8`, disclosed) | 50 s |
+| Stop | "Attack" → Unsupported; triple-tap ALL HOLD | 20 s |
+
+Then evidence slides (G1 curve, G2 WR vs recall curve, G3 A/B, Pareto) → cost model and roadmap, with the same source running on a phone → scope-boundary slide. A 75 dB(A) fallback is scripted. Speeds are sim-tuned and disclosed.
 
 ---
 
 ## 8. Long-term direction
 
-| Phase | Scope | Gate to enter next |
-|---|---|---|
-| **0 (this year)** | Three core loops in simulation; operator-tested HUD; cost model | **May 2027:** G1–G3 targets met or honestly reported; ≥15 interviews (≥3 operators/drone users); ≥1 LOI or pilot conversation (DIU, SOFWERX, fire/SAR); portability proven (RayNeo-specific LOC <5% and the same APK on a phone); full-time decision; Penn IP policy checked |
-| **1 (6–12 mo)** | Trusted-hardware port; companion on Android EUD or ARM64 Linux; ATAK plugin v0; first real flights with a Blue UAS drone at a range; retrain on owned data; TLS 8089 + mTLS | SBIR Phase I / DIU CSO award + field test |
-| **2** | Squad-leader workflows, deep ATAK integration, ATO/RMF path (NIST 800-53, FIPS 140-3, STIGs, encryption at rest, signed builds), offline sync at scale | Accreditation sponsor |
-| **3** | Multi-asset ISR tasking (every task still human-confirmed), team mesh, lite SKU | Program of record conversation |
+| Phase | Scope | TRL | Gate to next |
+|---|---|---|---|
+| **0 (this year)** | Three core loops in sim; operator-tested HUD; cost model | 4 | May 2027: G1–G3 met or honestly reported; ≥15 interviews (≥3 operators/drone users); ≥1 LOI or pilot conversation; portability proven (same source and hud-core run on a phone via `generic`; `platform-rayneo` Kotlin LOC / all `glasses/` Kotlin LOC <5%); full-time decision; Penn IP policy checked |
+| **1 (6–12 mo)** | Trusted-hardware port; companion on Android EUD/ARM64; ATAK plugin v0; first real flights with a Blue UAS drone at a range; retrain on owned data; TLS 8089 + mTLS; wss | 5–6 | SBIR Phase I / DIU CSO + field test |
+| **2** | Squad-leader workflows, deep ATAK integration, ATO/RMF (NIST 800-53, FIPS 140-3, STIGs, encryption at rest, signed builds), offline sync at scale | 6–7 | Accreditation sponsor |
+| **3** | Multi-asset ISR tasking (every task still human-confirmed), team mesh, lite SKU | 7+ | Program-of-record conversation |
 
-**Trusted hardware path:** only `platform-rayneo` is replaced by a new `platform-<vendor>` module. Candidates: Vuzix (US waveguides; Collins dismounted-soldier display), DigiLens ARGO (XR2, 30° FOV; build location UNVERIFIED), ThirdEye X2 (NJ; TAA ≠ US-made). Audit components, not just brands, against 1260H; the June 2026 additions included display makers ([pm §1.1](council/r1/pm.md)); TCL's status is UNVERIFIED. The companion moves to an ARM64 box or Android EUD (pymavlink and MAVSDK both ship aarch64 wheels).
+**Trusted hardware path.**
+- Only `platform-rayneo` is replaced.
+- Candidates: Vuzix, DigiLens ARGO, ThirdEye X2. Audit components against 1260H, not just brands.
+- TCL's status is UNVERIFIED.
 
-**ATAK plugin path (the wedge):** Phase 0 needs CoT only. Phase 1 ships a phone-first **voice-tasking and feed-triage ATAK plugin** built on the ATAK-CIV SDK from tak.gov (the GitHub repo was archived May 2025) and signed through TAK.gov third-party signing; the glasses become the upgrade. This has the lowest adoption friction and survives losing the glasses A/B test. Moat candidates: integration breadth (Blue UAS adapters, CoT, MAVLink), published voice-tasking safety evidence, the WATCH/DISMISS feedback data loop (if data rights allow), and ATO.
+**ATAK plugin wedge.**
+- Phase 1 ships a phone-first voice-tasking and feed-triage plugin on the ATAK-CIV SDK from tak.gov, signed through TAK.gov.
+- The glasses become the upgrade.
+- Moat candidates:
+  - integration breadth;
+  - published voice-tasking safety evidence (lure suite, study);
+  - the WATCH/DISMISS data loop (if data rights allow);
+  - ATO.
 
-**Dual use and buyers:** SAR and wildland fire first; law enforcement last (no ID, published retention, audit logs). DIU's drones/autonomy portfolio (**never as a kill-web component**), SOFWERX assessment events, the next xTech cycle, SBIR/STTR (foreign-ties screening; clean cap table).
+**Dual use and buyers.**
+- SAR and wildland fire come first; law enforcement last (no ID, published retention, audit logs).
+- DIU's drones/autonomy portfolio, **never as a kill-web component**.
+- SOFWERX, xTech, SBIR/STTR (foreign-ties screening).
 
-**What not to build:** weapons, targeting, fires/CAS hooks or target handoff; automatic hostile classification; countermeasure actuation; face, biometric or re-ID; 6DoF anchoring in Phase 0; swarms before Phase 3; a free-form LLM as primary control; cloud dependence; our own drones, radios, glasses or map engine; a general chatbot; DJI/Autel SDKs. Staying inside DoDD 3000.09's exclusions depends on never adding effects ([defense_sme §1.7](council/r1/defense_sme.md)).
+**What not to build:**
+- weapons, targeting, fires/CAS hooks or target handoff;
+- automatic hostile classification;
+- **continuous pursuit of a contact** (L16);
+- countermeasure actuation;
+- face, biometric or re-ID;
+- 6DoF anchoring in Phase 0;
+- swarms before Phase 3;
+- a free-form LLM as primary control;
+- cloud dependence;
+- our own drones, radios, glasses or map engine;
+- DJI/Autel SDKs.
+
+Staying inside the DoDD 3000.09 exclusions depends on never adding effects.
 
 ---
 
-## 9. Risk register (top 10)
+## 9. Risk register
 
 | # | Risk | Owner | L | I | Mitigation |
 |---|---|---|---|---|---|
-| 1 | RayNeo display/input/mic differs from docs: SBS size, long-press stolen, audio mode string (UNVERIFIED) | Arjun | M | H | `DisplaySink.stereoMode` runtime switch; toggle-PTT fallback; standard `VOICE_RECOGNITION`; day-one T5–T9; G0 Dec 10 |
-| 2 | One pair of glasses breaks, is lost or is monopolized | Arjun | M | H | `generic` flavor on phones; SBS emulator; sign-out log; budget ask for a second unit (Q3) |
-| 3 | Battery/thermal shorter than a session (~30 min continuous video per reviewers) | Arjun | H | M | Camera off by default; transient inset; 30 fps cap; power bank; thermal policy; sessions ≤30 min |
-| 4 | ASR fails in noise through glasses mics | Om | M | H | PTT; constrained grammar + hotwords; per-slot say-again; named points over grids in the demo; close-talk BT headset fallback; touch path |
-| 5 | Unsafe or accidental command execution | Om, Anshuman | L | H | Two-press confirm, lockout, nonce, 10 s expiry, closed-grammar agreement, invariant monitor, adversarial suite; stop = hold only |
-| 6 | COCO models miss small aerial targets; no GPU here | Anshuman | H (measured) | M | Tiling now; VisDrone fine-tune W1–4 on Colab/Penn; recall by pixel height; G2 gate at W4 with fallbacks |
-| 7 | IRB delay or no relevant participants | Alisha | M | H | Request Dec 4; submit Jan 8; civilian student pool with cadets/veterans as civilians; floor N=12 |
-| 8 | Integration slip; no skeleton by Jan 19 | Anshuman | M | H | Frozen contracts; Phase B e2e already green in CI; Friday integrations; G1 gate |
-| 9 | Perceived as weapons, a toy, or China-dependent; export-control slip | Simon | M | H | Unknown-only detections, no effect verbs, scope guard in code, "watch" vocabulary, boundary slide, portability proof, public data only (no CUI/ITAR) |
-| 10 | PX4 SIH packages (v1.18 RC) misbehave or can't run here | Arjun | M | M | MockVehicle carries CI; pin the deb by sha256; source-build recipe; Docker image on Mac/Win |
+| 1 | RayNeo display/input/mic differs from docs (SBS size, long-press, audio mode, DoubleClick-before-TripleClick) | Arjun | M | H | Runtime stereo mode from the measured window; raw-event InputFsm; toggle-PTT fallback; double-tap hold; G0-critical tests in session 1; G0 Dec 10 |
+| 2 | One pair breaks, is lost or is monopolized | Arjun | M | H | `generic` flavor; emulator; sign-out log; budget ask (Q3) |
+| 3 | Battery/thermal shorter than a session | Arjun | H | M | Camera off; transient inset; 30 fps cap; power bank; sessions ≤30 min |
+| 4 | ASR fails in noise or on written-form output | Om | M | H | PTT + pre-roll; profiles; aliases; real-ASR fixtures; say-again; touch path; BT headset fallback |
+| 5 | Unsafe or accidental execution | Om | L | H | `card_shown` + lockout + exact-word confirm; decoy closed grammar; outbound classifier; wire-log invariants I1–I8; audio lure suite; stop = hold only |
+| 6 | COCO misses small aerial targets; no GPU | Anshuman | H | M | 576×320 input; ground-plane tracker; fine-tune W1–4; recall by pixel height; G2 gate W4 |
+| 7 | IRB delay or no relevant participants | Alisha | M | H | Request Dec 4; floor N=12; civilian pool |
+| 8 | Integration slip; no skeleton by Jan 19 | **Arjun** | M | H | Frozen contracts; e2e green in CI; Friday integrations; load rebalanced (C73) |
+| 9 | Perceived as weapons, a toy, or China-dependent; export slip | Simon | M | H | Unknown-only, no effect verbs, no pursuit, scope guard, boundary slide, portability, interview guardrails |
+| 10 | PX4 misbehaves or never runs here | Arjun | M | M | Mock carries CI via the shared profile + trace diff; Dec 12 demo-laptop gate; version frozen after Mar 5 |
+| **11** | **The team can't maintain ~20k lines of council-written code** | Anshuman | M | H | One owner per path; per-WS runnable walkthroughs; 1-hour handoffs by Dec 17; tests as documentation; no codegen |
 
-Watch list: magnetometer heading error (uncertainty gate and text-bearing fallback); Wi-Fi jitter at the venue (dedicated router); NC-data commercialization (provenance tracking + retrain); Compose drawn twice too slow (View/Canvas backend).
+**Watch list:**
+- magnetometer heading error;
+- venue Wi-Fi jitter;
+- NC-data commercialization;
+- Compose drawn twice is slow (single GraphicsLayer, View fallback);
+- ATAK-CIV `t-x-d-d` semantics;
+- the CoT `how` and `ce` interpretation.
 
 ---
 
 ## 10. Open questions for the human team
 
-1. **Workspace approvals:** may the council run the extracted PX4 SIH binary here (D15), and optionally `apt install gz-harmonic` for a 10-minute llvmpipe probe? Without it, Tier A is verified only on team laptops.
-2. **Course logistics:** what is the exact final demo date and format (SEAS-wide competition or the department's own), and what are the required deliverables (report, poster, video)?
-3. **Hardware budget:** is there money for a second display device (backup and portability proof) and for the ~$2k of accessories? Does a teammate have an Android phone for the `generic` pre-flight, the chest-phone study arm and the ATAK-CIV interop phone?
-4. **Compute:** is Penn GPU access available (which cluster, what quota) for S2 fine-tuning, or do we budget for Colab? Does any team laptop have an NVIDIA GPU with native Ubuntu 24.04 for Tier B? How many members are on Apple silicon or Windows?
-5. **Mentor expectations:** does Prof. Zhao want a research contribution (the Pareto study or the mmWave ground sensor) or a product demo? Will he agree in writing, before Jan 20, that "SITL + real recorded footage" counts as proof for G1/G2? Will he serve as IRB PI?
-6. **Vendor terms:** RayNeo SDK redistribution terms. Arjun to ask RayNeo; until then it is fetched by script, never committed.
-7. **Post-May:** who intends to go full-time, and what does Penn's IP policy say about student project IP?
+1. **Workspace approvals (L14):** may the council run the PX4 SIH binary and `apt` here? Everything P0 works without them.
+2. **Course logistics:** exact final-demo date, format and required deliverables.
+3. **Hardware budget:** a second display device; ~$2k of accessories, now including a BT HID PTT button and a forearm phone mount; Android phones for `generic`, the study's phone arm and ATAK-CIV.
+4. **Compute:** Penn GPU access, or Colab? Does anyone have an NVIDIA laptop with native Ubuntu 24.04, and which laptop is the native-Linux demo machine (Dec 12)?
+5. **Mentor:** research contribution (Pareto or mmWave) or product demo? Written agreement that SITL + real footage counts for G1/G2? Will he serve as IRB PI?
+6. **Vendor terms:** RayNeo SDK redistribution. Until answered, the SDK is fetched by script and never committed; built APKs go only to the team.
+7. **Post-May:** full-time intent; Penn IP policy.
+8. **Team agreement on the rebalanced ownership (C73).** Simon takes sim, Om takes the safety FSM, Arjun takes integration. Confirm at the next team meeting.
 
-Not open questions: operator-dependent choices (confirm vocabulary CONFIRM/CANCEL vs EXECUTE/DISREGARD, MGRS precision, TTS on/off, alerts-per-hour budget) are settled by interviews and the pilot, with defaults already in config.
+Operator-dependent defaults are settled by interviews and the pilot, with values already in config:
+- confirm vocabulary;
+- MGRS precision;
+- TTS on/off;
+- the alert budget;
+- the disclosed sim speeds.
