@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/sys.ping.schema.json",
+  "title": "sys.ping",
+  "description": "RTT only; never used to compare clocks. Sender fills t0_ms.",
+  "type": "object",
+  "required": [
+    "t0_ms"
+  ],
+  "properties": {
+    "t0_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "t1_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "t2_ms": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/Confirmation.schema.json",
+  "title": "Confirmation",
+  "type": "object",
+  "required": [
+    "proposal_id",
+    "nonce",
+    "method",
+    "operator_id",
+    "ts_ms"
+  ],
+  "properties": {
+    "proposal_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "nonce": {
+      "type": "string",
+      "minLength": 1
+    },
+    "method": {
+      "type": "string",
+      "minLength": 1
+    },
+    "operator_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "ts_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "press": {
+      "type": "object",
+      "required": [
+        "ptt_down_recv_ms",
+        "held_ms",
+        "est_start_ms"
+      ],
+      "properties": {
+        "ptt_down_recv_ms": {
+          "$ref": "defs.schema.json#/$defs/TsMs"
+        },
+        "held_ms": {
+          "$ref": "defs.schema.json#/$defs/DurMs"
+        },
+        "est_start_ms": {
+          "$ref": "defs.schema.json#/$defs/TsMs"
+        }
+      },
+      "additionalProperties": true
+    },
+    "asr": {
+      "type": "object",
+      "required": [
+        "text_norm",
+        "conf",
+        "closed_grammar"
+      ],
+      "properties": {
+        "text_norm": {
+          "type": "string"
+        },
+        "conf": {
+          "$ref": "defs.schema.json#/$defs/ConfOrNull"
+        },
+        "closed_grammar": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "duration_ms": {
+      "$ref": "defs.schema.json#/$defs/DurMs"
+    }
+  },
+  "additionalProperties": true
+}

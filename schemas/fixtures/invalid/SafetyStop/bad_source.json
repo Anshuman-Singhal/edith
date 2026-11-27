@@ -1,0 +1,20 @@
+{
+  "_why": "source not in enum",
+  "stop_id": "stop-0001",
+  "scope": "all",
+  "source": "gesture",
+  "ts_ms": 1795000050000,
+  "asset_ids": [
+    "drone1",
+    "drone2"
+  ],
+  "not_sent": [
+    {
+      "asset_id": "drone2",
+      "reason": "link_lost"
+    }
+  ],
+  "cancelled_tasks": [
+    "prop-0007"
+  ]
+}

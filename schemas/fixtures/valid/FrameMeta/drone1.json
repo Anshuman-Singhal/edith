@@ -1,0 +1,31 @@
+{
+  "frame_id": 18342,
+  "t_capture_ms": 1795000001100,
+  "t_sim_ms": 131250,
+  "asset_id": "drone1",
+  "pose_est": {
+    "lat": 40.071621,
+    "lon": -88.63,
+    "alt_msl_m": 270.0,
+    "alt_agl_m": 60.0,
+    "roll_deg": 1.2,
+    "pitch_deg": -4.0,
+    "yaw_deg": 2.0
+  },
+  "rel_alt_m": 60.1,
+  "gimbal": {
+    "mode": "stabilized",
+    "pitch_deg": -60.0,
+    "yaw_deg": 0.0
+  },
+  "K": {
+    "fx": 914.0,
+    "fy": 914.0,
+    "cx": 640.0,
+    "cy": 360.0
+  },
+  "w": 1280,
+  "h": 720,
+  "pose_source": "sidecar",
+  "video": "on"
+}

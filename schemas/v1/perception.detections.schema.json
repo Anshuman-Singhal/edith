@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/perception.detections.schema.json",
+  "title": "perception.detections",
+  "description": "Placement benchmark only. Body wraps the [Detection] list (bodies are objects).",
+  "type": "object",
+  "required": [
+    "detections"
+  ],
+  "properties": {
+    "detections": {
+      "type": "array",
+      "items": {
+        "$ref": "Detection.schema.json"
+      }
+    }
+  },
+  "additionalProperties": true
+}

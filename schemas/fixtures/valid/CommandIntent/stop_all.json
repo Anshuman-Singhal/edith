@@ -1,0 +1,31 @@
+{
+  "intent_id": "in-0010",
+  "session_id": "vs-0042",
+  "utterance": {
+    "text": "all stop",
+    "asr_conf": null,
+    "nbest": [
+      "all stop"
+    ],
+    "engine": "moonshine",
+    "model_sha": "small-streaming-en",
+    "norm_profile": "spoken"
+  },
+  "heading_snapshot_deg": 41.5,
+  "operator_pos": {
+    "lat": 40.0698649,
+    "lon": -88.6302344
+  },
+  "parsed": {
+    "kind": "safety_stop",
+    "asset_ref": "all",
+    "stop_via": "grammar",
+    "params": {}
+  },
+  "slots": [],
+  "parser": {
+    "method": "grammar",
+    "conf": 1.0
+  },
+  "result": "ok"
+}

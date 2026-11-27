@@ -318,6 +318,20 @@ requires-dist = [{ name = "edith-common", editable = "common" }]
 name = "edith-common"
 version = "0.1.0"
 source = { editable = "common" }
+dependencies = [
+    { name = "jsonschema" },
+    { name = "mgrs" },
+    { name = "pydantic" },
+    { name = "pymap3d" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "jsonschema", specifier = ">=4.26,<5" },
+    { name = "mgrs", specifier = ">=1.7,<2" },
+    { name = "pydantic", specifier = ">=2.13,<3" },
+    { name = "pymap3d", specifier = ">=3.2,<4" },
+]
 
 [[package]]
 name = "edith-companion"

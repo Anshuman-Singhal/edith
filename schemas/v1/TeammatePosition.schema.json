@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/TeammatePosition.schema.json",
+  "title": "TeammatePosition",
+  "type": "object",
+  "required": [
+    "uid",
+    "callsign",
+    "team",
+    "role",
+    "pos",
+    "course_deg",
+    "speed_mps",
+    "ts_ms",
+    "stale_ms",
+    "source"
+  ],
+  "properties": {
+    "uid": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "callsign": {
+      "type": "string",
+      "minLength": 1
+    },
+    "team": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "pos": {
+      "type": "object",
+      "required": [
+        "lat",
+        "lon",
+        "hae_m"
+      ],
+      "properties": {
+        "lat": {
+          "$ref": "defs.schema.json#/$defs/Lat"
+        },
+        "lon": {
+          "$ref": "defs.schema.json#/$defs/Lon"
+        },
+        "hae_m": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": true
+    },
+    "course_deg": {
+      "$ref": "defs.schema.json#/$defs/Deg360"
+    },
+    "speed_mps": {
+      "type": "number",
+      "minimum": 0
+    },
+    "ts_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "stale_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "mesh",
+        "server",
+        "sim"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

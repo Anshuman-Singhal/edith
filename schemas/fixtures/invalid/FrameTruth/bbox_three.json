@@ -1,0 +1,21 @@
+{
+  "_why": "bbox_norm needs 4 numbers",
+  "frame_id": 18342,
+  "t_sim_ms": 131250,
+  "asset_id": "drone1",
+  "objects": [
+    {
+      "entity_id": "deer-1",
+      "cls": "animal",
+      "bbox_norm": [
+        0.4,
+        0.5,
+        0.1
+      ],
+      "visible_frac": 1.0,
+      "range_m": 112.4,
+      "lat": 40.0719813,
+      "lon": -88.6308206
+    }
+  ]
+}

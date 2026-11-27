@@ -1,0 +1,27 @@
+{
+  "_why": "cls is person|vehicle|other only (no biometrics)",
+  "det_id": "gt0-000913",
+  "frame_id": 18342,
+  "frame_ts_ms": 1795000001100,
+  "source": {
+    "asset_id": "drone1",
+    "sensor_id": "eo0"
+  },
+  "cls": "face",
+  "conf": 0.62,
+  "bbox_norm": [
+    0.41,
+    0.52,
+    0.03,
+    0.04
+  ],
+  "det_px_h": 29.0,
+  "infer": {
+    "placement": "offload",
+    "model": "gt",
+    "model_sha": "",
+    "t_capture_ms": 1795000001100,
+    "t_start_ms": 1795000001180,
+    "t_end_ms": 1795000001180
+  }
+}

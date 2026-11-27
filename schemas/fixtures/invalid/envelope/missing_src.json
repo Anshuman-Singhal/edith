@@ -1,0 +1,16 @@
+{
+  "_why": "src required",
+  "v": 1,
+  "type": "head.pose",
+  "id": "a0b1c2d3-e4f5-4a6b-8c7d-9e0f1a2b3c4d",
+  "ts_ms": 1795000001200,
+  "seq": 101,
+  "body": {
+    "yaw_deg": 41.5,
+    "pitch_deg": -3.2,
+    "roll_deg": 0.8,
+    "heading_deg": 41.5,
+    "heading_unc_deg": 6.0,
+    "source": "rv"
+  }
+}

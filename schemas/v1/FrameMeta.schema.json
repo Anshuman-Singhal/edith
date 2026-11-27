@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/FrameMeta.schema.json",
+  "title": "FrameMeta",
+  "description": "UDP 5700+i sidecar. pose_est = true pose + nav noise (C57).",
+  "type": "object",
+  "required": [
+    "frame_id",
+    "t_capture_ms",
+    "t_sim_ms",
+    "asset_id",
+    "pose_est",
+    "rel_alt_m",
+    "gimbal",
+    "K",
+    "w",
+    "h",
+    "pose_source",
+    "video"
+  ],
+  "properties": {
+    "frame_id": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "t_capture_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "t_sim_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "asset_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "pose_est": {
+      "type": "object",
+      "required": [
+        "lat",
+        "lon",
+        "alt_msl_m",
+        "alt_agl_m",
+        "roll_deg",
+        "pitch_deg",
+        "yaw_deg"
+      ],
+      "properties": {
+        "lat": {
+          "$ref": "defs.schema.json#/$defs/Lat"
+        },
+        "lon": {
+          "$ref": "defs.schema.json#/$defs/Lon"
+        },
+        "alt_msl_m": {
+          "type": "number"
+        },
+        "alt_agl_m": {
+          "type": "number"
+        },
+        "roll_deg": {
+          "type": "number"
+        },
+        "pitch_deg": {
+          "type": "number"
+        },
+        "yaw_deg": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": true
+    },
+    "rel_alt_m": {
+      "type": "number"
+    },
+    "gimbal": {
+      "type": "object",
+      "required": [
+        "mode",
+        "pitch_deg",
+        "yaw_deg"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "stabilized",
+            "body_fixed"
+          ]
+        },
+        "pitch_deg": {
+          "type": "number"
+        },
+        "yaw_deg": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": true
+    },
+    "K": {
+      "type": "object",
+      "required": [
+        "fx",
+        "fy",
+        "cx",
+        "cy"
+      ],
+      "properties": {
+        "fx": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "fy": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "cx": {
+          "type": "number"
+        },
+        "cy": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": true
+    },
+    "w": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "h": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "pose_source": {
+      "type": "string",
+      "enum": [
+        "sidecar",
+        "telemetry_interp"
+      ]
+    },
+    "video": {
+      "type": "string",
+      "enum": [
+        "on",
+        "off"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

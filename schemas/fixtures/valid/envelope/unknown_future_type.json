@@ -1,0 +1,11 @@
+{
+  "v": 1,
+  "type": "sys.future_thing",
+  "id": "3f6c1a52-8e0b-4d2a-9c41-7b1e2f9a0c11",
+  "ts_ms": 1795000001200,
+  "src": "companion-01",
+  "seq": 4183,
+  "body": {
+    "x": 1
+  }
+}

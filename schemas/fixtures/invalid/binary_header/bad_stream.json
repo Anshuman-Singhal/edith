@@ -1,0 +1,10 @@
+{
+  "_why": "stream not one of the §2 forms",
+  "stream": "audio.sideways",
+  "seq": 5501,
+  "ts_ms": 1795000000010,
+  "codec": "pcm_s16le",
+  "sr": 16000,
+  "ch": 1,
+  "preroll": true
+}

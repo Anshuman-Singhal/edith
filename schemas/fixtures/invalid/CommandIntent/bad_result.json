@@ -1,0 +1,55 @@
+{
+  "_why": "result not in enum",
+  "intent_id": "in-0007",
+  "session_id": "vs-0042",
+  "utterance": {
+    "text": "drone one scout nai one",
+    "asr_conf": null,
+    "nbest": [
+      "drone one scout nai one"
+    ],
+    "engine": "moonshine",
+    "model_sha": "small-streaming-en",
+    "norm_profile": "spoken"
+  },
+  "heading_snapshot_deg": 41.5,
+  "operator_pos": {
+    "lat": 40.0698649,
+    "lon": -88.6302344
+  },
+  "parsed": {
+    "kind": "command",
+    "verb": "search",
+    "asset_ref": "drone1",
+    "target": {
+      "kind": "named",
+      "name": "NAI 1"
+    },
+    "params": {}
+  },
+  "slots": [
+    {
+      "name": "asset",
+      "raw_tokens": [
+        "drone",
+        "one"
+      ],
+      "value": "drone1",
+      "conf": 1.0
+    },
+    {
+      "name": "target",
+      "raw_tokens": [
+        "nai",
+        "one"
+      ],
+      "value": "NAI 1",
+      "conf": 1.0
+    }
+  ],
+  "parser": {
+    "method": "grammar",
+    "conf": 1.0
+  },
+  "result": "maybe"
+}

@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "base": "https://edith.local/schemas/v1/",
+  "description": "Type name -> schema file. Message types are WebSocket envelope `type`s (interfaces §3); dir is relative to the glasses (up = glasses -> companion).",
+  "shared": "defs.schema.json",
+  "types": {
+    "envelope": "envelope.schema.json",
+    "binary_header": "binary_header.schema.json",
+    "sys.hello": "sys.hello.schema.json",
+    "sys.ping": "sys.ping.schema.json",
+    "sys.pong": "sys.pong.schema.json",
+    "head.pose": "head.pose.schema.json",
+    "input.event": "input.event.schema.json",
+    "voice.session.start": "voice.session.start.schema.json",
+    "voice.session.stop": "voice.session.stop.schema.json",
+    "voice.text": "voice.text.schema.json",
+    "voice.partial": "voice.partial.schema.json",
+    "voice.final": "voice.final.schema.json",
+    "hud.state": "HudState.schema.json",
+    "hud.event": "hud.event.schema.json",
+    "glasses.telemetry": "glasses.telemetry.schema.json",
+    "perception.detections": "perception.detections.schema.json",
+    "AssetState": "AssetState.schema.json",
+    "FrameMeta": "FrameMeta.schema.json",
+    "FrameTruth": "FrameTruth.schema.json",
+    "Detection": "Detection.schema.json",
+    "Track": "Track.schema.json",
+    "Alert": "Alert.schema.json",
+    "CommandIntent": "CommandIntent.schema.json",
+    "CommandProposal": "CommandProposal.schema.json",
+    "Confirmation": "Confirmation.schema.json",
+    "SafetyStop": "SafetyStop.schema.json",
+    "Execution": "Execution.schema.json",
+    "Feedback": "Feedback.schema.json",
+    "TeammatePosition": "TeammatePosition.schema.json",
+    "HudState": "HudState.schema.json",
+    "udp.detections": "udp.detections.schema.json"
+  },
+  "messages": {
+    "sys.hello": {
+      "schema": "sys.hello.schema.json",
+      "dir": "both"
+    },
+    "sys.ping": {
+      "schema": "sys.ping.schema.json",
+      "dir": "both"
+    },
+    "sys.pong": {
+      "schema": "sys.pong.schema.json",
+      "dir": "both"
+    },
+    "head.pose": {
+      "schema": "head.pose.schema.json",
+      "dir": "up"
+    },
+    "input.event": {
+      "schema": "input.event.schema.json",
+      "dir": "up"
+    },
+    "voice.session.start": {
+      "schema": "voice.session.start.schema.json",
+      "dir": "up"
+    },
+    "voice.session.stop": {
+      "schema": "voice.session.stop.schema.json",
+      "dir": "up"
+    },
+    "voice.text": {
+      "schema": "voice.text.schema.json",
+      "dir": "up"
+    },
+    "voice.partial": {
+      "schema": "voice.partial.schema.json",
+      "dir": "down"
+    },
+    "voice.final": {
+      "schema": "voice.final.schema.json",
+      "dir": "down"
+    },
+    "hud.state": {
+      "schema": "HudState.schema.json",
+      "dir": "down"
+    },
+    "hud.event": {
+      "schema": "hud.event.schema.json",
+      "dir": "up"
+    },
+    "glasses.telemetry": {
+      "schema": "glasses.telemetry.schema.json",
+      "dir": "up"
+    },
+    "perception.detections": {
+      "schema": "perception.detections.schema.json",
+      "dir": "up"
+    }
+  },
+  "binary_streams": [
+    "audio.up",
+    "video.down/<asset_id>",
+    "video.crop/<alert_id>",
+    "video.up",
+    "audio.down"
+  ]
+}

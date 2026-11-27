@@ -1,0 +1,28 @@
+{
+  "alert_id": "al-0013",
+  "tier": "warning",
+  "score": 0.95,
+  "kind": "link_lost",
+  "label": "D2 LINK",
+  "ref": {
+    "asset_id": "drone2"
+  },
+  "bearing_deg": null,
+  "range_m": null,
+  "row2": "RTL IN 4 s",
+  "actions": [
+    "details"
+  ],
+  "gesture_dismiss": false,
+  "signals": {
+    "conf": 0.78,
+    "novelty": 0.0,
+    "proximity": 0.35,
+    "closing": 0.0,
+    "recency": 1.0,
+    "class_w": 1.0,
+    "aoi": 1.0
+  },
+  "created_ms": 1795000000000,
+  "expires_ms": 1795000030000
+}

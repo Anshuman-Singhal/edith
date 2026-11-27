@@ -1,0 +1,34 @@
+{
+  "_why": "geo_quality not in enum",
+  "track_id": "t-0031",
+  "alias": "contact 3",
+  "cls": "vehicle",
+  "conf": 0.78,
+  "hits": 4,
+  "window": 5,
+  "geo": {
+    "lat": 40.0727017,
+    "lon": -88.6292966,
+    "ce_m": 14.0
+  },
+  "vel": {
+    "e_mps": 0.0,
+    "n_mps": 0.0
+  },
+  "geo_quality": "approx",
+  "first_seen_ms": 1794999996000,
+  "last_seen_ms": 1795000001100,
+  "source_assets": [
+    "drone1"
+  ],
+  "status": "confirmed",
+  "novelty": 0.9,
+  "affiliation": "unknown",
+  "affiliation_src": "machine",
+  "cot_uid": "EDITH-companion-01-trk-t-0031",
+  "det_ids": [
+    "c-002190",
+    "c-002195",
+    "c-002201"
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/SafetyStop.schema.json",
+  "title": "SafetyStop",
+  "description": "scope is \"all\" or an asset_id.",
+  "type": "object",
+  "required": [
+    "stop_id",
+    "scope",
+    "source",
+    "ts_ms",
+    "asset_ids",
+    "not_sent",
+    "cancelled_tasks"
+  ],
+  "properties": {
+    "stop_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "scope": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "voice",
+        "voice_spotting",
+        "temple",
+        "bt",
+        "companion"
+      ]
+    },
+    "ts_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "asset_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "defs.schema.json#/$defs/Id"
+      }
+    },
+    "not_sent": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "asset_id",
+          "reason"
+        ],
+        "properties": {
+          "asset_id": {
+            "$ref": "defs.schema.json#/$defs/Id"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "link_lost"
+            ]
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "cancelled_tasks": {
+      "type": "array",
+      "items": {
+        "$ref": "defs.schema.json#/$defs/Id"
+      }
+    }
+  },
+  "additionalProperties": true
+}

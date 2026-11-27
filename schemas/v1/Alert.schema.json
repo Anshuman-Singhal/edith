@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/Alert.schema.json",
+  "title": "Alert",
+  "description": "bearing_deg/range_m are null for kinds with no bearing (link, battery, task, TAK). gesture_dismiss is false on WARNING.",
+  "type": "object",
+  "required": [
+    "alert_id",
+    "tier",
+    "score",
+    "kind",
+    "label",
+    "ref",
+    "bearing_deg",
+    "range_m",
+    "row2",
+    "actions",
+    "gesture_dismiss",
+    "signals",
+    "created_ms",
+    "expires_ms"
+  ],
+  "properties": {
+    "alert_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "tier": {
+      "$ref": "defs.schema.json#/$defs/Tier"
+    },
+    "score": {
+      "type": "number"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "new_contact",
+        "contact_close",
+        "link_lost",
+        "battery_low",
+        "geofence",
+        "teammate_stale",
+        "task_status",
+        "tak_link"
+      ]
+    },
+    "label": {
+      "$ref": "defs.schema.json#/$defs/AlertLabel"
+    },
+    "ref": {
+      "type": "object",
+      "properties": {
+        "track_id": {
+          "$ref": "defs.schema.json#/$defs/Id"
+        },
+        "asset_id": {
+          "$ref": "defs.schema.json#/$defs/Id"
+        },
+        "uid": {
+          "$ref": "defs.schema.json#/$defs/Id"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "track_id"
+          ]
+        },
+        {
+          "required": [
+            "asset_id"
+          ]
+        },
+        {
+          "required": [
+            "uid"
+          ]
+        }
+      ],
+      "additionalProperties": true
+    },
+    "bearing_deg": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "exclusiveMaximum": 360
+    },
+    "range_m": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "row2": {
+      "type": "string"
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "$ref": "defs.schema.json#/$defs/AlertAction"
+      },
+      "uniqueItems": true
+    },
+    "gesture_dismiss": {
+      "type": "boolean"
+    },
+    "signals": {
+      "type": "object",
+      "required": [
+        "conf",
+        "novelty",
+        "proximity",
+        "closing",
+        "recency",
+        "class_w",
+        "aoi"
+      ],
+      "properties": {
+        "conf": {
+          "type": "number"
+        },
+        "novelty": {
+          "type": "number"
+        },
+        "proximity": {
+          "type": "number"
+        },
+        "closing": {
+          "type": "number"
+        },
+        "recency": {
+          "type": "number"
+        },
+        "class_w": {
+          "type": "number"
+        },
+        "aoi": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": true
+    },
+    "created_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "expires_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "ce_m": {
+      "$ref": "defs.schema.json#/$defs/CeM"
+    }
+  },
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "tier": {
+            "const": "warning"
+          }
+        },
+        "required": [
+          "tier"
+        ]
+      },
+      "then": {
+        "properties": {
+          "gesture_dismiss": {
+            "const": false
+          }
+        }
+      }
+    }
+  ]
+}

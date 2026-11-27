@@ -1,0 +1,17 @@
+{
+  "_why": "id must be a uuid4",
+  "v": 1,
+  "type": "head.pose",
+  "id": "msg-101",
+  "ts_ms": 1795000001200,
+  "src": "glasses-x3pro",
+  "seq": 101,
+  "body": {
+    "yaw_deg": 41.5,
+    "pitch_deg": -3.2,
+    "roll_deg": 0.8,
+    "heading_deg": 41.5,
+    "heading_unc_deg": 6.0,
+    "source": "rv"
+  }
+}

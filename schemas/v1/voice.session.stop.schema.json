@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/voice.session.stop.schema.json",
+  "title": "voice.session.stop",
+  "type": "object",
+  "required": [
+    "session_id",
+    "trigger"
+  ],
+  "properties": {
+    "session_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "trigger": {
+      "type": "string",
+      "enum": [
+        "ptt",
+        "bt_ptt",
+        "touch",
+        "text"
+      ]
+    },
+    "reason": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

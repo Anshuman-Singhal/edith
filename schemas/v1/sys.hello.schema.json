@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/sys.hello.schema.json",
+  "title": "sys.hello",
+  "description": "Client roles (glasses|emulator|fake) must send token, device, display, input, caps. The companion replies with role=companion.",
+  "type": "object",
+  "required": [
+    "role",
+    "proto"
+  ],
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "glasses",
+        "emulator",
+        "fake",
+        "companion"
+      ]
+    },
+    "proto": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "minItems": 1
+    },
+    "token": {
+      "type": "string"
+    },
+    "device": {
+      "type": "object",
+      "required": [
+        "model",
+        "fingerprint",
+        "sdk_int"
+      ],
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "fingerprint": {
+          "type": "string"
+        },
+        "sdk_int": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": true
+    },
+    "display": {
+      "type": "object",
+      "required": [
+        "win_w",
+        "win_h",
+        "eye_w",
+        "eye_h",
+        "eyes"
+      ],
+      "properties": {
+        "win_w": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "win_h": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "eye_w": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "eye_h": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "eyes": {
+          "type": "string",
+          "enum": [
+            "sbs",
+            "mono"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "input": {
+      "type": "object",
+      "required": [
+        "ptt",
+        "temple_confirm"
+      ],
+      "properties": {
+        "ptt": {
+          "type": "string",
+          "enum": [
+            "hold",
+            "toggle",
+            "bt_key"
+          ]
+        },
+        "temple_confirm": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "caps": {
+      "type": "object",
+      "required": [
+        "inference",
+        "camera",
+        "tts"
+      ],
+      "properties": {
+        "inference": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "camera": {
+          "type": "boolean"
+        },
+        "tts": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "role": {
+            "enum": [
+              "glasses",
+              "emulator",
+              "fake"
+            ]
+          }
+        },
+        "required": [
+          "role"
+        ]
+      },
+      "then": {
+        "required": [
+          "token",
+          "device",
+          "display",
+          "input",
+          "caps"
+        ]
+      }
+    }
+  ]
+}

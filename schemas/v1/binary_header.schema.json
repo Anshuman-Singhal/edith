@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/binary_header.schema.json",
+  "title": "BinaryHeader",
+  "description": "interfaces §2: binary WS frame = [u32 BE header_len][UTF-8 JSON header][payload]",
+  "type": "object",
+  "required": [
+    "stream",
+    "seq",
+    "ts_ms",
+    "codec"
+  ],
+  "properties": {
+    "stream": {
+      "type": "string",
+      "pattern": "^(audio\\.up|audio\\.down|video\\.up|video\\.down/[A-Za-z0-9_.:-]+|video\\.crop/[A-Za-z0-9_.:-]+)$"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "ts_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "codec": {
+      "type": "string",
+      "enum": [
+        "pcm_s16le",
+        "jpeg",
+        "h264"
+      ]
+    },
+    "w": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "h": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "sr": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "ch": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "frame_id": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "preroll": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/hud.event.schema.json",
+  "title": "hud.event",
+  "type": "object",
+  "required": [
+    "kind",
+    "ref",
+    "ts_ms"
+  ],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "inset_open",
+        "inset_close",
+        "alert_shown",
+        "alert_cleared",
+        "card_shown",
+        "card_cleared"
+      ]
+    },
+    "ref": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "ts_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    }
+  },
+  "additionalProperties": true
+}

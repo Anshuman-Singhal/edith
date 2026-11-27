@@ -1,0 +1,43 @@
+{
+  "_why": "steps needs >= 1 entry",
+  "proposal_id": "prop-0007",
+  "intent_id": "in-0007",
+  "asset_id": "drone1",
+  "steps": [],
+  "resolved_target": {
+    "lat": 40.0722515,
+    "lon": -88.63,
+    "alt_agl_m": 60.0,
+    "mgrs": "16TCK6100737049",
+    "label": "NAI 1"
+  },
+  "readback": {
+    "rows": [
+      "D1 TAKEOFF · SEARCH",
+      "NAI 1 · 300 m · 60 m AGL"
+    ],
+    "spoken": "drone one, take off and search NAI one"
+  },
+  "checks": [
+    {
+      "name": "geofence",
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "battery",
+      "pass": true,
+      "msg": "81%"
+    }
+  ],
+  "confirm_with": [
+    "voice",
+    "touch_companion"
+  ],
+  "nonce": "n-6b1f",
+  "created_ms": 1795000000000,
+  "lockout_until_ms": 1795000001100,
+  "expires_ms": 1795000010500,
+  "card_shown_ms": 1795000000500,
+  "state": "await_confirm"
+}

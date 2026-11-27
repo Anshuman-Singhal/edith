@@ -1,0 +1,11 @@
+{
+  "_why": "proposal_id required (nullable)",
+  "exec_id": "ex-0021",
+  "asset_id": "drone1",
+  "step_idx": 0,
+  "verb": "takeoff",
+  "status": "completed",
+  "mav_result": 0,
+  "detail": "alt 59.4 m",
+  "ts_ms": 1795000023000
+}

@@ -1,0 +1,13 @@
+{
+  "_why": "body must be an object",
+  "v": 1,
+  "type": "head.pose",
+  "id": "a0b1c2d3-e4f5-4a6b-8c7d-9e0f1a2b3c4d",
+  "ts_ms": 1795000001200,
+  "src": "glasses-x3pro",
+  "seq": 101,
+  "body": [
+    1,
+    2
+  ]
+}

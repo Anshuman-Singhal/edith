@@ -1,0 +1,17 @@
+{
+  "proposal_id": "prop-0007",
+  "nonce": "n-6b1f",
+  "method": "voice",
+  "operator_id": "VIKING 1-1",
+  "ts_ms": 1795000002900,
+  "press": {
+    "ptt_down_recv_ms": 1795000002500,
+    "held_ms": 300,
+    "est_start_ms": 1795000002195
+  },
+  "asr": {
+    "text_norm": "confirm",
+    "conf": null,
+    "closed_grammar": null
+  }
+}

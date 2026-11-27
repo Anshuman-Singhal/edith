@@ -1,0 +1,31 @@
+{
+  "_why": "actions not in enum",
+  "alert_id": "al-0012",
+  "tier": "caution",
+  "score": 0.71,
+  "kind": "new_contact",
+  "label": "VEHICLE",
+  "ref": {
+    "track_id": "t-0031"
+  },
+  "bearing_deg": 12.4,
+  "range_m": 318.0,
+  "ce_m": 14.0,
+  "row2": "DRONE 1 · UNKNOWN · 3 s",
+  "actions": [
+    "watch",
+    "engage"
+  ],
+  "gesture_dismiss": true,
+  "signals": {
+    "conf": 0.78,
+    "novelty": 0.9,
+    "proximity": 0.35,
+    "closing": 0.0,
+    "recency": 1.0,
+    "class_w": 1.0,
+    "aoi": 1.0
+  },
+  "created_ms": 1795000000000,
+  "expires_ms": 1795000060000
+}

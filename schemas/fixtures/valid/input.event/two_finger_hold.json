@@ -1,0 +1,9 @@
+{
+  "kind": "two_finger_hold",
+  "gesture_seq": 19,
+  "pointer_count": 2,
+  "duration_ms": 1140,
+  "ctx": {
+    "proposal_id": "prop-0007"
+  }
+}

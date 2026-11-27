@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/CommandIntent.schema.json",
+  "title": "CommandIntent",
+  "type": "object",
+  "required": [
+    "intent_id",
+    "session_id",
+    "utterance",
+    "heading_snapshot_deg",
+    "operator_pos",
+    "parsed",
+    "slots",
+    "parser",
+    "result"
+  ],
+  "properties": {
+    "intent_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "session_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "utterance": {
+      "type": "object",
+      "required": [
+        "text",
+        "asr_conf",
+        "nbest",
+        "engine",
+        "model_sha",
+        "norm_profile"
+      ],
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "asr_conf": {
+          "$ref": "defs.schema.json#/$defs/ConfOrNull"
+        },
+        "nbest": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "engine": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model_sha": {
+          "type": "string"
+        },
+        "norm_profile": {
+          "type": "string",
+          "enum": [
+            "spoken",
+            "written"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "heading_snapshot_deg": {
+      "$ref": "defs.schema.json#/$defs/Deg360"
+    },
+    "operator_pos": {
+      "$ref": "defs.schema.json#/$defs/LatLon"
+    },
+    "parsed": {
+      "type": "object",
+      "required": [
+        "kind",
+        "params"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "command",
+            "safety_stop",
+            "response",
+            "query",
+            "hud"
+          ]
+        },
+        "params": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "alt_agl_m": {
+              "type": "number",
+              "minimum": 0
+            },
+            "radius_m": {
+              "type": "number",
+              "minimum": 0
+            },
+            "standoff_m": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": true
+        },
+        "verb": {
+          "type": "string",
+          "minLength": 1
+        },
+        "asset_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stop_via": {
+          "type": "string",
+          "enum": [
+            "grammar",
+            "spotting"
+          ]
+        },
+        "target": {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "self",
+                "teammate",
+                "clock_range",
+                "grid",
+                "named",
+                "relative",
+                "track",
+                "area"
+              ]
+            },
+            "uid": {
+              "type": "string",
+              "minLength": 1
+            },
+            "clock": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 12
+            },
+            "range_m": {
+              "type": "number",
+              "minimum": 0
+            },
+            "mgrs": {
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "track_alias": {
+              "type": "string",
+              "minLength": 1
+            },
+            "offset": {
+              "type": "object",
+              "required": [
+                "dir",
+                "dist_m"
+              ],
+              "properties": {
+                "dir": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "dist_m": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "additionalProperties": true
+            },
+            "size_m": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "slots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "raw_tokens",
+          "value",
+          "conf"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "raw_tokens": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "value": {},
+          "conf": {
+            "$ref": "defs.schema.json#/$defs/Conf"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "parser": {
+      "type": "object",
+      "required": [
+        "method",
+        "conf"
+      ],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": [
+            "grammar",
+            "llm"
+          ]
+        },
+        "conf": {
+          "$ref": "defs.schema.json#/$defs/Conf"
+        }
+      },
+      "additionalProperties": true
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "say_again",
+        "rejected"
+      ]
+    },
+    "reject_reason": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": true
+}

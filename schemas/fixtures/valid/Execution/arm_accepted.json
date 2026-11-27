@@ -1,0 +1,11 @@
+{
+  "exec_id": "ex-0020",
+  "proposal_id": "prop-0007",
+  "asset_id": "drone1",
+  "step_idx": 0,
+  "verb": "arm",
+  "status": "accepted",
+  "mav_result": 0,
+  "detail": "",
+  "ts_ms": 1795000023000
+}

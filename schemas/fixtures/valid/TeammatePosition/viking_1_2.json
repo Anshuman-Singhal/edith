@@ -1,0 +1,16 @@
+{
+  "uid": "EDITH-SIM-tm-2",
+  "callsign": "VIKING 1-2",
+  "team": "Cyan",
+  "role": "Team Member",
+  "pos": {
+    "lat": 40.0703602,
+    "lon": -88.6314067,
+    "hae_m": 177.0
+  },
+  "course_deg": 45.0,
+  "speed_mps": 0.24,
+  "ts_ms": 1795000000000,
+  "stale_ms": 1795000120000,
+  "source": "sim"
+}

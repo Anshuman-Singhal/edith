@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/CommandProposal.schema.json",
+  "title": "CommandProposal",
+  "description": "Verbs are the structural allowlist only. state ends at dispatched (C64); Executions carry the rest. nonce is companion-internal.",
+  "type": "object",
+  "required": [
+    "proposal_id",
+    "intent_id",
+    "asset_id",
+    "steps",
+    "resolved_target",
+    "readback",
+    "checks",
+    "confirm_with",
+    "nonce",
+    "created_ms",
+    "lockout_until_ms",
+    "expires_ms",
+    "state"
+  ],
+  "properties": {
+    "proposal_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "intent_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "asset_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "verb",
+          "params"
+        ],
+        "properties": {
+          "verb": {
+            "$ref": "defs.schema.json#/$defs/Verb"
+          },
+          "params": {
+            "type": "object"
+          }
+        },
+        "additionalProperties": true
+      },
+      "minItems": 1
+    },
+    "resolved_target": {
+      "type": "object",
+      "required": [
+        "lat",
+        "lon",
+        "alt_agl_m",
+        "mgrs",
+        "label"
+      ],
+      "properties": {
+        "lat": {
+          "$ref": "defs.schema.json#/$defs/Lat"
+        },
+        "lon": {
+          "$ref": "defs.schema.json#/$defs/Lon"
+        },
+        "alt_agl_m": {
+          "type": "number"
+        },
+        "mgrs": {
+          "$ref": "defs.schema.json#/$defs/Mgrs"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "frozen_from_track": {
+          "$ref": "defs.schema.json#/$defs/Id"
+        }
+      },
+      "additionalProperties": true
+    },
+    "readback": {
+      "type": "object",
+      "required": [
+        "rows",
+        "spoken"
+      ],
+      "properties": {
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "spoken": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "pass",
+          "msg"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "pass": {
+            "type": "boolean"
+          },
+          "msg": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "confirm_with": {
+      "type": "array",
+      "items": {
+        "$ref": "defs.schema.json#/$defs/ConfirmWith"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "nonce": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "lockout_until_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "expires_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "await_confirm",
+        "confirmed",
+        "dispatched",
+        "cancelled",
+        "expired",
+        "superseded",
+        "invalidated"
+      ]
+    },
+    "card_shown_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    }
+  },
+  "additionalProperties": true
+}

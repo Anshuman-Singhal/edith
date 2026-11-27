@@ -79,7 +79,7 @@ ignore = ["E501"]
 [tool.pytest.ini_options]
 addopts = "-q --strict-markers"
 testpaths = ["common", "companion", "sim", "ml", "bench", "tools", "tests"]
-norecursedirs = ["glasses", "data", "models", "runs", "dist", ".venv", "node_modules", "build"]
+norecursedirs = ["glasses", "data", "models", "runs", "dist", ".venv", "node_modules", "build", ".hypothesis"]
 markers = [
   "contract: schema/fixture/adapter contract tests (./edith test contract)",
   "integration: multi-process integration tests (./edith test integration)",

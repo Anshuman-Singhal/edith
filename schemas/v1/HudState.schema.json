@@ -1,0 +1,570 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/HudState.schema.json",
+  "title": "HudState",
+  "description": "Body of hud.state. Countdowns are durations (expires_in_ms etc.); glasses never compare clocks.",
+  "type": "object",
+  "required": [
+    "seq",
+    "ts_ms",
+    "mode",
+    "declutter",
+    "quiet",
+    "operator",
+    "status",
+    "assets",
+    "minimap",
+    "tape",
+    "voice"
+  ],
+  "properties": {
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "ts_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "day",
+        "night"
+      ]
+    },
+    "declutter": {
+      "type": "string",
+      "enum": [
+        "full",
+        "min",
+        "warn"
+      ]
+    },
+    "quiet": {
+      "type": "boolean"
+    },
+    "operator": {
+      "type": "object",
+      "required": [
+        "lat",
+        "lon",
+        "heading_deg",
+        "heading_unc_deg"
+      ],
+      "properties": {
+        "lat": {
+          "$ref": "defs.schema.json#/$defs/Lat"
+        },
+        "lon": {
+          "$ref": "defs.schema.json#/$defs/Lon"
+        },
+        "heading_deg": {
+          "$ref": "defs.schema.json#/$defs/Deg360"
+        },
+        "heading_unc_deg": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": true
+    },
+    "status": {
+      "type": "object",
+      "required": [
+        "tak",
+        "gps",
+        "companion_battery_pct",
+        "data_age_ms",
+        "rec"
+      ],
+      "properties": {
+        "tak": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "degraded",
+            "lost",
+            "off"
+          ]
+        },
+        "gps": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "sim",
+            "none"
+          ]
+        },
+        "companion_battery_pct": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "data_age_ms": {
+          "$ref": "defs.schema.json#/$defs/DurMs"
+        },
+        "rec": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "asset_id",
+          "chip",
+          "mode_label",
+          "battery_pct",
+          "link",
+          "task_label"
+        ],
+        "properties": {
+          "asset_id": {
+            "$ref": "defs.schema.json#/$defs/Id"
+          },
+          "chip": {
+            "type": "string",
+            "pattern": "^D[1-9]$"
+          },
+          "mode_label": {
+            "type": "string"
+          },
+          "battery_pct": {
+            "$ref": "defs.schema.json#/$defs/Pct"
+          },
+          "link": {
+            "$ref": "defs.schema.json#/$defs/LinkState"
+          },
+          "task_label": {
+            "type": "string"
+          },
+          "dll_countdown_s": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "minimap": {
+      "type": "object",
+      "required": [
+        "range_m",
+        "entities",
+        "clusters"
+      ],
+      "properties": {
+        "range_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "ref",
+              "kind",
+              "marked",
+              "rel_e_m",
+              "rel_n_m",
+              "age_ms",
+              "stale"
+            ],
+            "properties": {
+              "ref": {
+                "$ref": "defs.schema.json#/$defs/Id"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "self",
+                  "friend",
+                  "own_drone",
+                  "unknown",
+                  "hostile",
+                  "point"
+                ]
+              },
+              "marked": {
+                "type": "boolean"
+              },
+              "rel_e_m": {
+                "type": "number"
+              },
+              "rel_n_m": {
+                "type": "number"
+              },
+              "age_ms": {
+                "$ref": "defs.schema.json#/$defs/DurMs"
+              },
+              "stale": {
+                "type": "boolean"
+              },
+              "heading_deg": {
+                "$ref": "defs.schema.json#/$defs/Deg360"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "clusters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "rel_e_m",
+              "rel_n_m",
+              "count"
+            ],
+            "properties": {
+              "rel_e_m": {
+                "type": "number"
+              },
+              "rel_n_m": {
+                "type": "number"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 2
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "tape": {
+      "type": "object",
+      "required": [
+        "carets"
+      ],
+      "properties": {
+        "carets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "ref",
+              "bearing_deg",
+              "style"
+            ],
+            "properties": {
+              "ref": {
+                "$ref": "defs.schema.json#/$defs/Id"
+              },
+              "bearing_deg": {
+                "$ref": "defs.schema.json#/$defs/Deg360"
+              },
+              "style": {
+                "type": "string",
+                "enum": [
+                  "friend",
+                  "own_drone",
+                  "unknown",
+                  "warning",
+                  "point"
+                ]
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "voice": {
+      "type": "object",
+      "required": [
+        "state"
+      ],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "idle",
+            "listening",
+            "processing",
+            "await_confirm",
+            "say_again",
+            "muted",
+            "offline"
+          ]
+        },
+        "partial": {
+          "type": "string"
+        },
+        "last_heard": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "alert": {
+      "type": "object",
+      "required": [
+        "alert_id",
+        "tier",
+        "label",
+        "bearing_deg",
+        "range_m",
+        "ce_m",
+        "row2",
+        "row3",
+        "gesture_dismiss",
+        "shown_since_ms",
+        "flash_until_ms",
+        "queue"
+      ],
+      "properties": {
+        "alert_id": {
+          "$ref": "defs.schema.json#/$defs/Id"
+        },
+        "tier": {
+          "$ref": "defs.schema.json#/$defs/Tier"
+        },
+        "label": {
+          "$ref": "defs.schema.json#/$defs/AlertLabel"
+        },
+        "bearing_deg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "exclusiveMaximum": 360
+        },
+        "range_m": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "ce_m": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "row2": {
+          "type": "string"
+        },
+        "row3": {
+          "type": "string"
+        },
+        "gesture_dismiss": {
+          "type": "boolean"
+        },
+        "shown_since_ms": {
+          "$ref": "defs.schema.json#/$defs/TsMs"
+        },
+        "flash_until_ms": {
+          "$ref": "defs.schema.json#/$defs/TsMs"
+        },
+        "queue": {
+          "type": "object",
+          "required": [
+            "count",
+            "warning",
+            "caution",
+            "advisory"
+          ],
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "warning": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "caution": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "advisory": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "tier": {
+                "const": "warning"
+              }
+            },
+            "required": [
+              "tier"
+            ]
+          },
+          "then": {
+            "properties": {
+              "gesture_dismiss": {
+                "const": false
+              }
+            }
+          }
+        }
+      ]
+    },
+    "proposal": {
+      "type": "object",
+      "required": [
+        "proposal_id",
+        "rows",
+        "expires_in_ms",
+        "lockout_in_ms",
+        "confirm_with",
+        "state"
+      ],
+      "properties": {
+        "proposal_id": {
+          "$ref": "defs.schema.json#/$defs/Id"
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "expires_in_ms": {
+          "type": "integer"
+        },
+        "lockout_in_ms": {
+          "type": "integer"
+        },
+        "confirm_with": {
+          "type": "array",
+          "items": {
+            "$ref": "defs.schema.json#/$defs/ConfirmWith"
+          },
+          "uniqueItems": true
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "await_confirm",
+            "lockout",
+            "sent",
+            "acked",
+            "no_ack",
+            "not_sent_timeout",
+            "cancelled"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "toast": {
+      "type": "object",
+      "required": [
+        "text",
+        "tier",
+        "until_in_ms"
+      ],
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tier": {
+          "$ref": "defs.schema.json#/$defs/Tier"
+        },
+        "until_in_ms": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": true
+    },
+    "undo": {
+      "type": "object",
+      "required": [
+        "alert_id",
+        "until_in_ms"
+      ],
+      "properties": {
+        "alert_id": {
+          "$ref": "defs.schema.json#/$defs/Id"
+        },
+        "until_in_ms": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": true
+    },
+    "inset": {
+      "type": "object",
+      "required": [
+        "stream",
+        "label",
+        "frame_age_ms",
+        "pinned",
+        "boxes"
+      ],
+      "properties": {
+        "stream": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string"
+        },
+        "frame_age_ms": {
+          "$ref": "defs.schema.json#/$defs/DurMs"
+        },
+        "pinned": {
+          "type": "boolean"
+        },
+        "boxes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "alias",
+              "cls",
+              "bbox_norm"
+            ],
+            "properties": {
+              "alias": {
+                "type": "string"
+              },
+              "cls": {
+                "$ref": "defs.schema.json#/$defs/Cls"
+              },
+              "bbox_norm": {
+                "$ref": "defs.schema.json#/$defs/BboxNorm"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "crop_stream": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/glasses.telemetry.schema.json",
+  "title": "glasses.telemetry",
+  "description": "thermal_headroom is null when the platform returns NaN (not representable in JSON).",
+  "type": "object",
+  "required": [
+    "battery_pct",
+    "current_ua",
+    "voltage_mv",
+    "temp_c",
+    "thermal_status",
+    "thermal_headroom",
+    "fps",
+    "decode_ms_p95",
+    "rtt_ms",
+    "usb_connected"
+  ],
+  "properties": {
+    "battery_pct": {
+      "$ref": "defs.schema.json#/$defs/Pct"
+    },
+    "current_ua": {
+      "type": "integer"
+    },
+    "voltage_mv": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "temp_c": {
+      "type": "number"
+    },
+    "thermal_status": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "thermal_headroom": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "fps": {
+      "type": "number",
+      "minimum": 0
+    },
+    "decode_ms_p95": {
+      "type": "number",
+      "minimum": 0
+    },
+    "rtt_ms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "usb_connected": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": true
+}

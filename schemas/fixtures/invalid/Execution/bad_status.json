@@ -1,0 +1,12 @@
+{
+  "_why": "status not in enum",
+  "exec_id": "ex-0021",
+  "proposal_id": "prop-0007",
+  "asset_id": "drone1",
+  "step_idx": 0,
+  "verb": "takeoff",
+  "status": "done",
+  "mav_result": 0,
+  "detail": "alt 59.4 m",
+  "ts_ms": 1795000023000
+}

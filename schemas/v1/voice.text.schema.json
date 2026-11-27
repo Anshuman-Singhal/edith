@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/voice.text.schema.json",
+  "title": "voice.text",
+  "description": "Accepted only with --allow-text-injection (headless) inside a PTT window (C87).",
+  "type": "object",
+  "required": [
+    "session_id",
+    "text"
+  ],
+  "properties": {
+    "session_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "text": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

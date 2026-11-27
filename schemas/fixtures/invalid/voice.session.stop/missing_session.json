@@ -1,0 +1,5 @@
+{
+  "_why": "session_id required",
+  "trigger": "ptt",
+  "reason": "ptt_up"
+}
