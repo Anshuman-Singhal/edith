@@ -1,0 +1,104 @@
+# demo_vignette.yaml — the headless D6 vignette (sim spec §7). Synthetic, rural Piatt County, IL;
+# fictional named points. Speeds are sim-tuned and disclosed (sim/profiles/quad_sim.yaml:
+# climb 3 m/s, cruise 10 m/s). EXERCISE — simulation only.
+version: 2
+name: demo_vignette
+seed: 7
+duration_s: 360
+max_speed: 4
+origin: {lat: 40.0700, lon: -88.6300, alt_msl: 210.0, geoid_n_m: -33.0}
+vehicle_profile: quad_sim
+profile_overrides: {}
+disclosures:
+  - "vehicle profile quad_sim is sim-tuned: climb 3 m/s, cruise 10 m/s (PX4 defaults 1.5 / 5)"
+basemap: null            # procedural basemap (C93)
+video: auto              # off with --headless --detector gt
+detector: gt
+ao: [[-400, -400], [700, -400], [700, 800], [-400, 800]]
+safety: {max_alt_agl_m: 120, geofence: ao}
+
+operator:
+  callsign: VIKING 1-1
+  path: [{t: 0, e: -20, n: -15}]
+teammates:
+  - {callsign: VIKING 1-2, sprite: person, path: [{t: 0, e: -120, n: 40}, {t: 360, e: -60, n: 100}]}
+  - {callsign: VIKING 1-3, sprite: person, path: [{t: 0, e: 90, n: -60}]}
+
+assets:
+  - id: drone1
+    callsign: D1
+    instance: 0
+    spawn: {e: 0, n: 0}
+    camera: {mode: synth, w: 1280, h: 720, hfov: 70, pitch: -60, gimbal: stabilized, fps: 10}
+  - id: drone2
+    callsign: D2
+    instance: 1
+    spawn: {e: 8, n: 0}
+    camera: {mode: synth, w: 1280, h: 720, hfov: 70, pitch: -60, gimbal: stabilized, fps: 10}
+
+gazetteer:
+  - {name: CP 3, e: 0, n: 0, aliases: [checkpoint three, launch]}
+  - {name: NAI 1, e: 0, n: 250, area_m: 300, aliases: [nai one]}
+  - {name: NAI 2, e: 380, n: -120, area_m: 200, aliases: [nai two]}
+
+entities:
+  - id: veh-7
+    cls: vehicle
+    sprite: pickup
+    path: [{t: 0, e: 60, n: 300}, {t: 280, e: 60, n: 300}, {t: 325, e: 400, n: 600}]
+  - id: deer-1
+    cls: animal
+    sprite: deer
+    path: [{t: 0, e: -70, n: 220}]
+    loiter_radius_m: 3
+
+gt_detector:
+  pd: 0.95
+  fa_per_h: 0
+  latency_ms: 150
+  bbox_noise_px: 2
+  rate_hz: 4
+  confusions: {deer-1: person}       # the planted false positive
+  clutter:
+    - {e: 120, n: 380, conf: 0.20, cls: vehicle}   # below track start 0.25
+
+events:
+  - {id: scout,    t: 30,  say: "drone one scout nai one",
+     cmd: {asset: drone1, steps: [takeoff, search], target: {named: NAI 1}}}
+  - {id: scout_ok, on: {card_shown: scout}, after_s: 2, say: "confirm"}
+  - {id: ovw,      t: 40,  say: "drone two overwatch my position radius one five zero",
+     cmd: {asset: drone2, steps: [takeoff, observe], target: {self: true}, radius_m: 150}}
+  - {id: ovw_ok,   on: {card_shown: ovw}, after_s: 2, say: "confirm"}
+  - {id: orb2,     t: 60,  say: "drone one orbit nai two",                 # never confirmed → timeout case
+     cmd: {asset: drone1, steps: [orbit], target: {named: NAI 2}}}
+  - {id: dism,     on: {alert_shown: {gt_entity: deer-1}}, after_s: 3, say: "dismiss"}
+  - {id: watch,    on: {alert_shown: {gt_entity: veh-7}},  after_s: 3, say: "watch"}
+  - {id: mark,     on: {event: watch}, after_s: 3, say: "mark"}
+  - {id: jam,      t: 300, jam: {duration_s: 25, links: ["mavlink:drone2", "tak:*"]}}
+  - {id: atk,      t: 340, say: "drone one attack the vehicle"}
+  - {id: stop,     t: 350, touch: triple_tap}
+
+expect:
+  - {after: scout, within_s: 8,  proposal: {steps: [takeoff, search], state: dispatched}}
+  - {after: scout, within_s: 60, gt: {asset: drone1, mode: AUTO.MISSION, alt_agl_min: 54}}
+  - {after: ovw,   within_s: 35, gt: {asset: drone2, mode: POSCTL.ORBIT}}
+  - {after: orb2,  within_s: 15, proposal: {state: expired}, wire: {asset: drone1, class: MOTION, count: 0, window_s: 15}}
+  - {during: {from: {event: ovw_ok, plus_s: 35}, to: {event: jam, plus_s: 30}},
+     alerts: {tier: warning, count: 0}, cot: {near_friend_m: 15, count: 0}, assoc_friend: {min: 1}}
+  - {after: {gt: entity_in_fov, asset: drone1, entity: deer-1, min_dwell_s: 3}, within_s: 5,
+     alert: {kind: new_contact, cls: person, tier: caution}, cot: {type: a-u-G}}
+  - {after: dism,  within_s: 4, cot: {gt_entity: deer-1, live: false}}
+  - {during: {from: {event: dism}, to: end}, alerts: {gt_entity: deer-1, count: 0}}
+  - {during: {from: {event: dism, plus_s: 4}, to: end}, cot: {gt_entity: deer-1, live: true, count: 0}}
+  - {after: {gt: entity_in_fov, asset: drone1, entity: veh-7, min_dwell_s: 3}, within_s: 5,
+     alert: {kind: new_contact, cls: vehicle, tier: caution, shown: true}, cot: {type: a-u-G-E-V}}
+  - {after: mark,  within_s: 4,  cot: {gt_entity: veh-7, how: h-e}}
+  - {during: {from: {event: mark, plus_s: 4}, to: end}, cot: {gt_entity: veh-7, how: h-e, live: true}}
+  - {after: jam,   within_s: 5,  tak: {link: lost}}
+  - {after: jam,   within_s: 22, asset: {id: drone2, link: lost}}
+  - {after: jam,   within_s: 27, gt: {asset: drone2, mode: AUTO.RTL}}
+  - {after: {event: jam, plus_s: 25}, within_s: 5, tak: {link: ok},
+     router_log: {enqueued_min: 5, flushed_uids_include: [self, D1], flushed: true, order_preserved: true, original_time: true}}
+  - {after: atk,   within_s: 4,  intent: {result: rejected}, wire: {class: MOTION, count: 0, window_s: 10}}
+  - {after: stop,  within_s: 4,  gt: {asset: [drone1, drone2], mode: AUTO.LOITER}}
+  - {global: {invariant_violations: 0}, cot: {type_prefix: a-h, count: 0}}

@@ -1,0 +1,21 @@
+# sim/profiles/quad_sim.yaml — single source for vehicle behaviour (sim spec §1, L15, C62, C90).
+# Sim-tuned and DISCLOSED: climb 3 m/s and cruise 10 m/s are faster than the PX4 defaults
+# (1.5 / 5 m/s). MockVehicle reads this file directly; only the sim's PX4 launcher applies
+# these params to PX4 (after boot, with read-back). Scenarios may override keys only through
+# `profile_overrides`, disclosed in the scenario header.
+MPC_TKO_SPEED: 3.0        # m/s climb
+MPC_XY_CRUISE: 10.0       # m/s
+MPC_ACC_HOR: 3.0          # m/s² corner deceleration (PX4 default value UNVERIFIED); Mock + pre-run use trapezoidal corners (C91)
+MIS_TAKEOFF_ALT: 60
+RTL_RETURN_ALT: 60
+MPC_LAND_SPEED: 0.7
+NAV_DLL_ACT: 2            # Return (C12) [probed: 2 = Return_mode at v1.18.0-rc2]
+COM_DL_LOSS_T: 20         # s; demo_live.yaml overrides to 8 (C78, C92, disclosed)
+COM_FAIL_ACT_T: 5         # s delayed-hold before the failsafe action [probed default 5] (C89)
+COM_DISARM_PRFLT: 10      # s auto-disarm if armed and not flying [probed]
+COM_LOW_BAT_ACT: 0        # warn only (SITL default 3 [probed])
+SIM_BAT_DRAIN: 1800       # s; SITL otherwise floors at 50% within 30 s [probed]
+SIM_BAT_MIN_PCT: 10
+GF_ACTION: 1
+GF_MAX_VER_DIST: 120
+orbit_vel_mps: 5          # companion-side DO_ORBIT velocity (not a PX4 param)

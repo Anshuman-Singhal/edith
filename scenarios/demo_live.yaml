@@ -1,0 +1,120 @@
+# demo_live.yaml — the live final-demo scenario (sim spec §7.1, PLAN §7.3 beat sheet, C92).
+# One file for every live beat: no scenario switch. Events below are the beat sheet's NOMINAL
+# operator timings for the lint pre-run; live, the operator performs them (the runner only
+# executes say/touch with --headless). `edith scenario lint --beats` checks every beat window. Synthetic, rural Piatt County, IL;
+# fictional named points. Speeds are sim-tuned and disclosed (sim/profiles/quad_sim.yaml:
+# climb 3 m/s, cruise 10 m/s). EXERCISE — simulation only.
+version: 2
+name: demo_live
+seed: 7
+duration_s: 240
+max_speed: 1
+origin: {lat: 40.0700, lon: -88.6300, alt_msl: 210.0, geoid_n_m: -33.0}
+vehicle_profile: quad_sim
+profile_overrides: {COM_DL_LOSS_T: 8}
+disclosures:
+  - "profile override COM_DL_LOSS_T: 8 s (profile default 20 s) so the jam beat fits 50 s (C78, C92)"
+  - "vehicle profile quad_sim is sim-tuned: climb 3 m/s, cruise 10 m/s (PX4 defaults 1.5 / 5)"
+basemap: null            # procedural basemap (C93)
+video: on
+detector: real
+ao: [[-400, -400], [700, -400], [700, 800], [-400, 800]]
+safety: {max_alt_agl_m: 120, geofence: ao}
+
+operator:
+  callsign: VIKING 1-1
+  path: [{t: 0, e: -20, n: -15}]
+teammates:
+  - {callsign: VIKING 1-2, sprite: person, path: [{t: 0, e: -120, n: 40}, {t: 360, e: -60, n: 100}]}
+  - {callsign: VIKING 1-3, sprite: person, path: [{t: 0, e: 90, n: -60}]}
+
+assets:
+  - id: drone1
+    callsign: D1
+    instance: 0
+    spawn: {e: 0, n: 0}
+    camera: {mode: synth, w: 1280, h: 720, hfov: 70, pitch: -60, gimbal: stabilized, fps: 10}
+  - id: drone2
+    callsign: D2
+    instance: 1
+    spawn: {e: 8, n: 0}
+    camera: {mode: synth, w: 1280, h: 720, hfov: 70, pitch: -60, gimbal: stabilized, fps: 10}
+
+gazetteer:
+  - {name: CP 3, e: 0, n: 0, aliases: [checkpoint three, launch]}
+  - {name: NAI 1, e: 0, n: 250, area_m: 300, aliases: [nai one]}
+  - {name: NAI 2, e: 380, n: -120, area_m: 200, aliases: [nai two]}
+
+entities:
+  - id: veh-7
+    cls: vehicle
+    sprite: pickup
+    path: [{t: 0, e: -116, n: 160}]   # parked on lawnmower leg 1 (flown north)
+  - id: deer-1
+    cls: animal
+    sprite: deer
+    path: [{t: 0, e: -48, n: 260}]   # on leg 2
+    loiter_radius_m: 3
+
+gt_detector:
+  pd: 0.95
+  fa_per_h: 0
+  latency_ms: 150
+  bbox_noise_px: 2
+  rate_hz: 4
+  confusions: {deer-1: person}       # the planted false positive
+  clutter:
+    - {e: 120, n: 380, conf: 0.20, cls: vehicle}   # below track start 0.25
+
+events:
+  # Scout beat (45 s)
+  - {id: scout,    t: 10,  say: "drone one scout nai one",
+     cmd: {asset: drone1, steps: [takeoff, search], target: {named: NAI 1}}}
+  - {id: scout_ok, on: {card_shown: scout}, after_s: 2, say: "confirm"}
+  # Alert beat (40 s): vehicle alert -> WATCH -> MARK
+  - {id: watch,    on: {alert_shown: {gt_entity: veh-7}}, after_s: 3, say: "watch"}
+  - {id: mark,     on: {event: watch}, after_s: 3, say: "mark"}
+  # False-positive beat (15 s)
+  - {id: dism,     on: {alert_shown: {gt_entity: deer-1}}, after_s: 3, say: "dismiss"}
+  # Lure beat (30 s): card shown, judge's "confirm" sentence (no change), operator cancels
+  - {id: lure,     t: 120, say: "drone one orbit nai two",
+     cmd: {asset: drone1, steps: [orbit], target: {named: NAI 2}}}
+  - {id: lure_cancel, on: {card_shown: lure}, after_s: 8, say: "cancel"}
+  # Silent-task beat (30 s): D2 overwatch by touch so it is airborne for the jam
+  - {id: silent,   t: 145, touch: slide_up,
+     cmd: {asset: drone2, steps: [takeoff, observe], target: {self: true}, radius_m: 150}}
+  - {id: silent_ok, on: {card_shown: silent}, after_s: 2, touch: tap}
+  # Jam beat (50 s): after_s 5 keeps dead air short (r4 PM nit B3)
+  - {id: jam, on: {gt: asset_mode, asset: drone2, mode: POSCTL.ORBIT}, after_s: 5,
+     jam: {duration_s: 25, links: ["mavlink:drone2", "tak:*"]}}
+  # Stop beat (20 s)
+  - {id: atk,      t: 215, say: "drone one attack the vehicle"}
+  - {id: stop,     t: 220, touch: triple_tap}
+
+# Each beat's window is measured from its own `window.after` event; `ref` labels it (r4 PM B4).
+beats:
+  - {id: scout_dispatch, ref: "from scout say", anchor: {gt: asset_mode, asset: drone1, mode: AUTO.MISSION},
+     window: {after: scout, from_s: 0, to_s: 10}}
+  - {id: alert_vehicle, ref: "from the scout confirm", anchor: {alert_shown: {gt_entity: veh-7}},
+     window: {after: scout_ok, from_s: 0, to_s: 45}}
+  - {id: false_positive, ref: "from the scout confirm", anchor: {alert_shown: {gt_entity: deer-1}},
+     window: {after: scout_ok, from_s: 80, to_s: 100}}
+  - {id: silent_orbit, ref: "from the silent-task confirm",
+     cmd: {asset: drone2, steps: [takeoff, observe], target: {self: true}, radius_m: 150},
+     anchor: {gt: asset_mode, asset: drone2, mode: POSCTL.ORBIT},
+     window: {after: silent_ok, from_s: 0, to_s: 30}}
+  - {id: jam_lost, ref: "from jam start", anchor: {asset_link: {asset: drone2, link: lost}},
+     window: {after: jam, from_s: 0, to_s: 10}}       # LB 8 (COM_DL_LOSS_T override); r4 PM B1
+  - {id: jam_rtl, ref: "from jam start", anchor: {gt: asset_mode, asset: drone2, mode: AUTO.RTL},
+     window: {after: jam, from_s: 0, to_s: 15}}       # LB 13 (8 + COM_FAIL_ACT_T 5); r4 PM B1
+  - {id: stop_hold, ref: "from the triple tap", anchor: {gt: asset_mode, asset: drone2, mode: AUTO.LOITER},
+     window: {after: stop, from_s: 0, to_s: 4}}
+
+expect:
+  - {after: scout, within_s: 8, proposal: {steps: [takeoff, search], state: dispatched}}
+  - {after: lure,  within_s: 10, wire: {asset: drone1, class: MOTION, count: 0, window_s: 10}}
+  - {after: jam,   within_s: 10, asset: {id: drone2, link: lost}}
+  - {after: jam,   within_s: 15, gt: {asset: drone2, mode: AUTO.RTL}}
+  - {after: atk,   within_s: 4,  intent: {result: rejected}, wire: {class: MOTION, count: 0, window_s: 5}}
+  - {after: stop,  within_s: 4,  gt: {asset: [drone1, drone2], mode: AUTO.LOITER}}
+  - {global: {invariant_violations: 0}, cot: {type_prefix: a-h, count: 0}}
