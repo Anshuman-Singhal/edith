@@ -1,0 +1,271 @@
+{
+  "schema": "edith.bringup.registry/v1",
+  "generated_from": "docs/bringup/TESTS.md",
+  "tests_md_sha256": "fe63f3a3af5b2c8996dfeac17da0e6e804e7012162eb6f7b5883647d5d0f20d3",
+  "generator": "./edith glasses registry",
+  "count": 19,
+  "tests": [
+    {
+      "id": "T0",
+      "name": "Identity",
+      "tier": "g0",
+      "tags": [
+        "g0"
+      ],
+      "owners": [
+        "Arjun"
+      ],
+      "runner": "host",
+      "procedure": "`getprop` release/sdk/model/board/fingerprint; `dumpsys sensorservice`",
+      "pass": "Recorded; API 31–32 confirmed or flagged",
+      "implemented": true
+    },
+    {
+      "id": "T1",
+      "name": "ADB (USB)",
+      "tier": "all",
+      "tags": [],
+      "owners": [
+        "Arjun"
+      ],
+      "runner": "host",
+      "procedure": "Settings → General → swipe left ×10 on About Device; enable App Lab; `adb devices`",
+      "pass": "Device listed",
+      "implemented": true
+    },
+    {
+      "id": "T2",
+      "name": "ADB (Wi-Fi)",
+      "tier": "all",
+      "tags": [],
+      "owners": [
+        "Arjun"
+      ],
+      "runner": "host",
+      "procedure": "`adb tcpip 5555`, then `adb connect ip:5555`, then `install -r`",
+      "pass": "Works, or USB-only noted",
+      "implemented": true
+    },
+    {
+      "id": "T3",
+      "name": "Install",
+      "tier": "all",
+      "tags": [],
+      "owners": [
+        "Arjun"
+      ],
+      "runner": "host",
+      "procedure": "Install the vendor sample + ours. On `INSTALL_FAILED_UPDATE_INCOMPATIBLE` (debug key from another machine), `bringup.sh` uninstalls, reinstalls and re-provisions (C106)",
+      "pass": "Both in the launcher; no crash in 5 min",
+      "implemented": true
+    },
+    {
+      "id": "T4",
+      "name": "Screen mirror",
+      "tier": "all",
+      "tags": [],
+      "owners": [
+        "Arjun"
+      ],
+      "runner": "host",
+      "procedure": "`scrcpy --display 0`; if black, set multi-pass",
+      "pass": "Mirror usable for demos",
+      "implemented": true
+    },
+    {
+      "id": "T5",
+      "name": "Binocular",
+      "tier": "g0",
+      "tags": [
+        "g0"
+      ],
+      "owners": [
+        "Alisha"
+      ],
+      "runner": "apk",
+      "procedure": "`wm size`; L/R test pattern with grid and safe-area box; right-eye offset ±10 px; **circle-aspect check**; L-only and R-only glyphs",
+      "pass": "Size recorded; one fused image, no double vision; circle not squashed (else the stereo mode is wrong); corners visible; ≤5% janky frames at 30 fps (`gfxinfo`)",
+      "implemented": true
+    },
+    {
+      "id": "T6",
+      "name": "Touch",
+      "tier": "g0",
+      "tags": [
+        "g0"
+      ],
+      "owners": [
+        "Arjun"
+      ],
+      "runner": "apk",
+      "procedure": "Log raw events + `TempleAction`, 20 trials per gesture; record the system \"natural mode\" slide direction",
+      "pass": "≥19/20 each; keycodes and slide direction recorded",
+      "implemented": true
+    },
+    {
+      "id": "T7",
+      "name": "PTT",
+      "tier": "g0",
+      "tags": [
+        "g0"
+      ],
+      "owners": [
+        "Arjun"
+      ],
+      "runner": "apk",
+      "procedure": "Hold right temple 1 s, left temple 1 s, two-finger hold; 5 min of normal wear and frame adjusting; log the raw event sequence of a triple-tap",
+      "pass": "Our app gets DOWN/UP (or choose toggle); **DOWN → first captured audio frame ≤100 ms**; **0** confirm-class false triggers",
+      "implemented": true
+    },
+    {
+      "id": "T8",
+      "name": "Heading",
+      "tier": "all",
+      "tags": [],
+      "owners": [
+        "Arjun"
+      ],
+      "runner": "apk",
+      "procedure": "List sensors; N/E/S/W vs. a phone compass after figure-8 calibration; 5 min still",
+      "pass": "Error ≤15°; drift ≤5°/5 min (target)",
+      "implemented": false
+    },
+    {
+      "id": "T9",
+      "name": "Mic",
+      "tier": "g0",
+      "tags": [
+        "g0"
+      ],
+      "owners": [
+        "Om"
+      ],
+      "runner": "apk",
+      "procedure": "10 s in each RayNeo mode and each stock source; bystander at 1 m; 20 commands. PCM streams to `selftest --serve`, which writes WAVs to `runs/bringup/<ts>/` for offline ASR scoring",
+      "pass": "Rate and channels as requested; wearer ≥10 dB above bystander; quiet WER ≤10% (offline)",
+      "implemented": true
+    },
+    {
+      "id": "T10",
+      "name": "Camera",
+      "tier": "all",
+      "tags": [],
+      "owners": [
+        "Arjun"
+      ],
+      "runner": "apk",
+      "procedure": "Enumerate IDs/sizes/fps; preview 640×480 and 1280×720 for 5 min",
+      "pass": "≥10 fps sustained at 720p; no session errors",
+      "implemented": false
+    },
+    {
+      "id": "T11",
+      "name": "Wi-Fi",
+      "tier": "all",
+      "tags": [],
+      "owners": [
+        "Arjun"
+      ],
+      "runner": "apk",
+      "procedure": "TCP up/down against `selftest --serve`; 2.4 vs. 5 GHz; router and hotspot",
+      "pass": "≥10 Mbit/s each way; RTT p95 <30 ms (router)",
+      "implemented": true
+    },
+    {
+      "id": "T12",
+      "name": "WS soak",
+      "tier": "all",
+      "tags": [],
+      "owners": [
+        "Arjun"
+      ],
+      "runner": "apk",
+      "procedure": "Full app: 30 min, then kill the companion",
+      "pass": "Reconnect <3 s; HUD shows staleness",
+      "implemented": false
+    },
+    {
+      "id": "T13",
+      "name": "Inset",
+      "tier": "g0",
+      "tags": [
+        "g0"
+      ],
+      "owners": [
+        "Arjun"
+      ],
+      "runner": "apk",
+      "procedure": "`selftest --serve` sends 320×240 JPEG at 15 fps with `frame_id`; the glasses echo `{frame_id, recv→decoded ms}`. Latency is RTT-based, so no clocks are compared. List H.264 codecs",
+      "pass": "Latency p95 ≤150 ms, drops <2%, decode p95 <10 ms",
+      "implemented": true
+    },
+    {
+      "id": "T14",
+      "name": "Battery",
+      "tier": "g0",
+      "tags": [
+        "g0"
+      ],
+      "owners": [
+        "Arjun"
+      ],
+      "runner": "apk",
+      "procedure": "100→20% at full load (HUD + mic + inset + camera at 10 fps) and HUD-only; log every 10 s; also try while charging",
+      "pass": "Full load ≥30 min, HUD-only ≥60 min (targets); `CURRENT_NOW` readable",
+      "implemented": true
+    },
+    {
+      "id": "T15",
+      "name": "Thermals",
+      "tier": "all",
+      "tags": [],
+      "owners": [
+        "Arjun"
+      ],
+      "runner": "apk",
+      "procedure": "Same runs plus thermal status, headroom, IR temperature",
+      "pass": "No `MODERATE` within 20 min of HUD + audio; camera onset time recorded",
+      "implemented": false
+    },
+    {
+      "id": "T16",
+      "name": "Daylight",
+      "tier": "all",
+      "tags": [],
+      "owners": [
+        "Alisha"
+      ],
+      "runner": "apk",
+      "procedure": "In sun: brightness 50–200, fonts 16–32, swatches `fg` / `friend` / `#FFD400` / `#FF3030`; 3 viewers",
+      "pass": "Banner read in <1 s by 3/3; no reboot",
+      "implemented": false
+    },
+    {
+      "id": "T17",
+      "name": "Wear/sleep",
+      "tier": "all",
+      "tags": [],
+      "owners": [
+        "Arjun"
+      ],
+      "runner": "apk",
+      "procedure": "Remove, replace, idle 10 min",
+      "pass": "Behaviour documented; clean resume",
+      "implemented": false
+    },
+    {
+      "id": "T18",
+      "name": "Inference",
+      "tier": "all",
+      "tags": [],
+      "owners": [
+        "Arjun",
+        "Anshuman"
+      ],
+      "runner": "apk",
+      "procedure": "`benchmark_model` CPU/GPU/NNAPI/QNN on YOLOX-Nano fp32/fp16/int8; record `CURRENT_NOW` sign, units and update period",
+      "pass": "p50/p95 ms, mJ/inference, thermal status, `CURRENT_NOW` semantics recorded",
+      "implemented": false
+    }
+  ]
+}

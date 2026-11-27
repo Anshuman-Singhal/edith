@@ -1,0 +1,58 @@
+# WS-E model lockfile (PLAN §3.5, D8, C84). Fetched by `./edith fetch models [--from <dir>]`
+# into gitignored models/. sha256 values were checked against the upstream LFS/X-Linked-ETag
+# headers (HF) and the GitHub release asset on 2026-11-26.
+#   ship: true  = may be packaged into a companion wheel / glasses APK (D14 derives TFLite from it)
+#   ship: false = companion-only or offline (never in dist/)
+# derived_from records the training data lineage of the weights (C84 lint input).
+artifacts:
+  - name: yolox_nano_416
+    url: https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_nano.onnx
+    sha256: c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d
+    dest: models/yolox_nano.onnx
+    license: Apache-2.0
+    derived_from: "YOLOX-Nano official weights (Megvii-BaseDetection/YOLOX 0.1.1rc0, Apache-2.0), trained on COCO 2017 (annotations CC BY 4.0)"
+    input: {name: images, shape: [1, 3, 416, 416], layout: BGR_0_255_letterbox114}
+    ship: true
+  - name: yolox_tiny_416
+    url: https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_tiny.onnx
+    sha256: 427cc366d34e27ff7a03e2899b5e3671425c262ea2291f88bb942bc1cc70b0f7
+    dest: models/yolox_tiny.onnx
+    license: Apache-2.0
+    derived_from: "YOLOX-Tiny official weights (Megvii-BaseDetection/YOLOX 0.1.1rc0, Apache-2.0), trained on COCO 2017 (annotations CC BY 4.0)"
+    input: {name: images, shape: [1, 3, 416, 416], layout: BGR_0_255_letterbox114}
+    ship: true
+  - name: yolox_s_640
+    url: https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_s.onnx
+    sha256: c5c2d13e59ae883e6af3b45daea64af4833a4951c92d116ec270d9ddbe998063
+    dest: models/yolox_s.onnx
+    license: Apache-2.0
+    derived_from: "YOLOX-S official weights (Megvii-BaseDetection/YOLOX 0.1.1rc0, Apache-2.0), trained on COCO 2017 (annotations CC BY 4.0)"
+    input: {name: images, shape: [1, 3, 640, 640], layout: BGR_0_255_letterbox114}
+    ship: true
+  - name: dfine_n_coco
+    url: https://huggingface.co/onnx-community/dfine_n_coco-ONNX/resolve/380d2839c327efaf65dd0fe0c2c10ab7fadd5473/onnx/model.onnx
+    sha256: 0f684f409618ee8a822410e754a29caa817d1aa16283ce89cad936d0a48e2f35
+    dest: models/dfine_n.onnx
+    local_name: dfine_n.onnx
+    license: Apache-2.0
+    derived_from: "D-FINE-N (Peterande/D-FINE, Apache-2.0) COCO 2017 weights, ONNX export by onnx-community"
+    input: {name: pixel_values, shape: [1, 3, 640, 640], layout: RGB_0_1}
+    ship: false   # accuracy tier, companion-only (PLAN §3.5)
+  - name: dfine_n_coco_int8
+    url: https://huggingface.co/onnx-community/dfine_n_coco-ONNX/resolve/380d2839c327efaf65dd0fe0c2c10ab7fadd5473/onnx/model_int8.onnx
+    sha256: e1b9e192915dd19bcffad14ea205942bc6bae1363858cdedbeaf3ef7ec310e52
+    dest: models/dfine_n_int8.onnx
+    local_name: dfine_n_int8.onnx
+    license: Apache-2.0
+    derived_from: "dynamic int8 quantization of dfine_n_coco by onnx-community"
+    input: {name: pixel_values, shape: [1, 3, 640, 640], layout: RGB_0_1}
+    ship: false
+  - name: rtdetrv2_r18vd_coco
+    url: https://huggingface.co/onnx-community/rtdetr_v2_r18vd-ONNX/resolve/936f90b6a476c6da4dfe053fc521af55285976ba/onnx/model.onnx
+    sha256: 583a236ac21c95a7fd94f284fc21485e42355bfef82c27011ba78fbc09ee87e2
+    dest: models/rtdetrv2_r18.onnx
+    local_name: rtdetrv2_r18.onnx
+    license: Apache-2.0
+    derived_from: "RT-DETRv2-R18vd (lyuwenyu/RT-DETR, Apache-2.0) COCO 2017 weights, ONNX export by onnx-community"
+    input: {name: pixel_values, shape: [1, 3, 640, 640], layout: RGB_0_1}
+    ship: false   # offline teacher only

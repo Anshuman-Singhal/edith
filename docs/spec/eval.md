@@ -88,3 +88,13 @@ Budget: about 23 × $20.
   - Lite kit: goTenna Pro X class radio.
 - **Anchors:** IVAS ~$80k/unit hardware (UNVERIFIED, C80); Skydio X10D ≈$21k/system. Compare unit to unit and lifecycle to lifecycle.
 - **Phase 0 spend:** RayNeo $1,099–1,399, plus <$2k of accessories, plus a BT PTT button and a forearm phone mount.
+
+## 6. D8 perception metric definitions (WS-E)
+
+- **IDF1** (`edith_bench.goal2.metrics.idf1`): per frame, GT = entities in view; hypotheses =
+  confirmed tracks updated in that frame; a pair matches within 10 m (ground) or 40 px (pseudo
+  image plane); the identity map is greedy by co-occurrence (a lower bound on IDTP).
+- **Confirm latency**: track confirmation time − first frame with the entity in view.
+- **Duplicate rate**: confirmed fused tracks per GT entity that has ≥1 (majority `det_id`).
+- **CE90 calibration**: fraction of Monte-Carlo fixes with |error| ≤ ce_m under the sim
+  nav_noise; must be 90% ±3%.

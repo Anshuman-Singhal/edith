@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/bringup/bringup.schema.json",
+  "title": "E.D.I.T.H. host-side bring-up record (edith.bringup.host/v1)",
+  "description": "Written by tools/bringup.sh: runs/bringup/<ts>/bringup.json, or docs/bringup/dryrun.json with --dry-run.",
+  "type": "object",
+  "required": ["schema", "dry_run", "tier", "started_at", "ended_at", "adb", "serial", "package", "apk", "steps", "provisioning", "pull", "ok"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "edith.bringup.host/v1" },
+    "dry_run": { "type": "boolean" },
+    "tier": { "enum": ["g0", "all"] },
+    "started_at": { "type": "string" },
+    "ended_at": { "type": "string" },
+    "adb": { "type": "string" },
+    "serial": { "type": ["string", "null"] },
+    "package": { "type": "string" },
+    "apk": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": { "path": { "type": ["string", "null"] }, "sha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" } }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "status", "detail"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^(T[0-4]|install|provision|pull|T6-host|T5-host)$" },
+          "name": { "type": "string" },
+          "status": { "enum": ["pass", "fail", "warn", "skip", "info"] },
+          "detail": { "type": "string" },
+          "data": { "type": "object" }
+        }
+      }
+    },
+    "provisioning": {
+      "type": "object",
+      "required": ["peer", "command"],
+      "properties": { "peer": { "type": ["string", "null"] }, "command": { "type": ["string", "null"] }, "token_set": { "type": "boolean" } }
+    },
+    "pull": {
+      "type": "object",
+      "required": ["dest", "ok"],
+      "properties": { "dest": { "type": ["string", "null"] }, "ok": { "type": "boolean" } }
+    },
+    "ok": { "type": "boolean" }
+  }
+}

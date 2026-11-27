@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- BaseEventActivity extends AppCompatActivity; black background = see-through on the glasses. -->
+    <style name="Theme.Edith.SelfTest" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">#FF000000</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+</resources>
