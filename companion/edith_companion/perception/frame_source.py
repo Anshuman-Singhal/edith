@@ -20,8 +20,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 
 import numpy as np
-
-from ._compat import port
+from edith_common.ports import port
 
 SEI_UUID = b"EDITH-FRAMEID-v1"  # 16 bytes; simd (D7) writes the same
 assert len(SEI_UUID) == 16
@@ -267,8 +266,8 @@ class FrameSource:
         self.frames_out = 0
         self.rtp_sock = self.meta_sock = None
         if bind:
-            self.rtp_sock = _udp(host, port(RTP_PORT, instance))
-            self.meta_sock = _udp(host, port(SIDECAR_PORT, instance))
+            self.rtp_sock = _udp(host, port("rtp_video", instance))
+            self.meta_sock = _udp(host, port("frame_meta", instance))
 
     def push_meta(self, raw: bytes | dict) -> None:
         meta = json.loads(raw) if isinstance(raw, bytes | str) else raw

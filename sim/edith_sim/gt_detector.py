@@ -27,21 +27,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
+from edith_common.geo import lla_to_enu
+from edith_common.ports import port
 
-GT_PORT = 5800
 RATE_CAP_HZ = 4.0
 TILE_SCALE = 416 / 692      # detector input scale for det_px_h (C58)
 CLASS_MAP = {"person": "person", "vehicle": "vehicle", "animal": "other", "other": "other"}
 
 
 def _lla_to_enu(lat: float, lon: float, alt: float, origin) -> tuple[float, float, float]:
-    try:
-        from edith_common.geo import lla_to_enu  # type: ignore
-        return lla_to_enu(lat, lon, alt, origin)
-    except Exception:
-        import pymap3d
-        e, n, u = pymap3d.geodetic2enu(lat, lon, alt, origin.lat, origin.lon, origin.alt_msl_m)
-        return float(e), float(n), float(u)
+    return lla_to_enu(lat, lon, alt, origin)
 
 
 def _cam_R(meta: dict) -> np.ndarray:
@@ -101,10 +96,8 @@ class GtDetector:
         self._sock = None
         self._dest = None
         if send_host:
-            import os
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self._dest = (send_host,
-                          GT_PORT + instance + int(os.environ.get("EDITH_PORT_BASE", "0") or 0))
+            self._dest = (send_host, port("detections", instance))
         self.n_det = 0
 
     def close(self) -> None:

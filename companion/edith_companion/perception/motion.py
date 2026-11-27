@@ -71,19 +71,31 @@ class MotionEstimator:
         return H
 
     def _ecc(self, prev: np.ndarray, cur: np.ndarray) -> np.ndarray | None:
-        H = self._last_h.copy()
-        crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 60, 1e-5)
+        """ECC (homography) coarse-to-fine; initialised from the last good homography and, if
+        that does not converge, from a phase-correlation translation."""
+        a32, b32 = prev.astype(np.float32), cur.astype(np.float32)
+        (dx, dy), _ = cv2.phaseCorrelate(a32, b32)
+        for init in (self._last_h, np.array([[1, 0, dx], [0, 1, dy], [0, 0, 1.0]])):
+            H = self._ecc_from(a32, b32, init)
+            if H is not None:
+                return H
+        return None
+
+    @staticmethod
+    def _ecc_from(a32: np.ndarray, b32: np.ndarray, init: np.ndarray) -> np.ndarray | None:
+        H = init.copy()
+        crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 80, 1e-5)
         try:
-            for scale in (0.25, 0.5):
+            for scale in (0.5, 1.0):
                 S = np.diag([scale, scale, 1.0])
-                a = cv2.resize(prev, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
-                b = cv2.resize(cur, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
-                # findTransformECC warps the *input* (b) onto the template (a): it estimates
-                # W with a(x) ≈ b(W x), i.e. W maps prev → cur.
+                a = cv2.resize(a32, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+                b = cv2.resize(b32, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+                # ECC estimates W with prev(x) ≈ cur(W x), i.e. W maps prev → cur pixels.
                 W = (S @ H @ np.linalg.inv(S)).astype(np.float32)
-                _, W = cv2.findTransformECC(a.astype(np.float32), b.astype(np.float32), W,
-                                            cv2.MOTION_HOMOGRAPHY, crit, None, 3)
+                cc, W = cv2.findTransformECC(a, b, W, cv2.MOTION_HOMOGRAPHY, crit, None, 5)
                 H = np.linalg.inv(S) @ W.astype(np.float64) @ S
         except cv2.error:
+            return None
+        if cc < 0.5:
             return None
         return H / H[2, 2]

@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import socket
 
-from ._compat import port
+from edith_common.ports import port
 
 OFFLOAD_PORT = 5800
 
@@ -37,7 +37,7 @@ class OffloadDetector:
         if bind:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.sock.bind((host, port(OFFLOAD_PORT, instance)))
+            self.sock.bind((host, port("detections", instance)))
             self.sock.setblocking(False)
 
     def poll(self, max_datagrams: int = 256) -> list[tuple[int | None, list[dict]]]:

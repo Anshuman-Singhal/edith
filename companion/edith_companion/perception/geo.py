@@ -22,8 +22,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 import numpy as np
-
-from ._compat import Origin, enu_to_lla, lla_to_enu
+from edith_common.geo import Origin, enu_to_lla, lla_to_enu
 
 MIN_DEPRESSION_DEG = 5.0
 _M_NED_TO_ENU = np.array([[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, -1.0]])

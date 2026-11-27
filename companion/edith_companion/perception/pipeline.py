@@ -16,10 +16,10 @@ from dataclasses import dataclass, field
 
 import cv2
 import numpy as np
+from edith_common.geo import Origin
 
-from ._compat import Origin
 from .friendly import FriendlyAssociator, Pli
-from .fusion import Fusion, FusedTrack
+from .fusion import FusedTrack, Fusion
 from .geo import (
     GeoNoise,
     ce90_from_cov,
@@ -233,11 +233,14 @@ class Perception:
     def _track_dict(self, pid, cls, conf, hits, lat, lon, ce, vel, quality, first, last,
                     assets, confirmed, novelty, assoc, det_ids) -> dict:
         alias = self._alias.get(pid)
-        return {
-            "track_id": pid,
-            "alias": f"contact {alias}" if alias else None,
-            "cls": cls, "conf": round(float(conf), 4), "hits": int(hits), "window": 5,
-            "geo": {"lat": lat, "lon": lon, "ce_m": round(float(ce), 2)},
+        if lat is None:                       # pseudo track with no usable pose: origin
+            lat, lon = self.origin.lat, self.origin.lon
+        d = {
+            "track_id": str(pid),
+            "alias": f"contact {alias}" if alias else f"tentative {pid}",
+            "cls": cls, "conf": round(min(max(float(conf), 0.0), 1.0), 4), "hits": int(hits),
+            "window": 5,
+            "geo": {"lat": float(lat), "lon": float(lon), "ce_m": round(float(ce), 2)},
             "vel": {"e_mps": vel[0], "n_mps": vel[1]},   # px/s for pseudo tracks
             "geo_quality": quality,
             "first_seen_ms": int(first), "last_seen_ms": int(last),
@@ -245,14 +248,21 @@ class Perception:
             "status": "confirmed" if confirmed else "new",
             "novelty": novelty,
             "affiliation": "unknown", "affiliation_src": "machine",
-            "assoc_friend_uid": assoc,
             "cot_uid": f"EDITH-{self.companion_id}-trk-{pid}",
-            "det_ids": list(det_ids)[-8:],
+            "det_ids": [str(x) for x in list(det_ids)[-8:]],
         }
+        if assoc is not None:
+            d["assoc_friend_uid"] = assoc
+        return d
 
     # ---------------------------------------------------------------- views
     def tracks(self, include_lost: bool = False) -> list[dict]:
         return [d for d in self._out.values() if include_lost or d["status"] != "lost"]
+
+
+def to_wire(track: dict) -> dict:
+    """Schema-valid ``Track`` (interfaces §4) without the private ``_*`` debug keys."""
+    return {k: v for k, v in track.items() if not k.startswith("_")}
 
 
 def alert_eligible(track: dict) -> bool:

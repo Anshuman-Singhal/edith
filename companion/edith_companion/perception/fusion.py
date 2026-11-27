@@ -12,6 +12,7 @@ from .geo import ce90_from_cov
 from .tracker import GATE_D2, KTrack
 
 MAX_DT_MS = 5000
+MAX_GATE_M = 25.0     # absolute cap on fusion distance (coasting tracks have large P)
 
 
 @dataclass
@@ -54,6 +55,8 @@ class Fusion:
             if abs(lt.last_ms - ft.last_seen_ms) >= MAX_DT_MS:
                 continue
             r = x[:2] - ft.x[:2]
+            if float(np.hypot(*r)) > MAX_GATE_M:
+                continue
             d2 = float(r @ np.linalg.solve(P[:2, :2] + ft.P[:2, :2], r))
             if d2 < GATE_D2:
                 yield d2, ft
@@ -90,7 +93,9 @@ class Fusion:
         info = np.zeros((2, 2))
         iv = np.zeros(2)
         best_v = None
-        for lt in ft.members.values():
+        newest_ms = max(m.last_ms for m in ft.members.values())
+        fresh = [m for m in ft.members.values() if newest_ms - m.last_ms < MAX_DT_MS]
+        for lt in fresh:
             x, P = lt.predicted(t_ms)
             Pi = np.linalg.inv(P[:2, :2])
             info += Pi
@@ -129,7 +134,11 @@ class Fusion:
                     continue
                 self._refresh(a, t_ms)
                 self._refresh(b, t_ms)
+                if abs(a.last_seen_ms - b.last_seen_ms) >= MAX_DT_MS:
+                    continue
                 r = a.x[:2] - b.x[:2]
+                if float(np.hypot(*r)) > MAX_GATE_M:
+                    continue
                 if float(r @ np.linalg.solve(a.P[:2, :2] + b.P[:2, :2], r)) >= GATE_D2:
                     continue
                 keep, drop = (a, b) if a.track_id < b.track_id else (b, a)

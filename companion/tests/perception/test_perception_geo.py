@@ -7,7 +7,6 @@ import random
 import numpy as np
 import pytest
 from _e_synth import K720, ORIGIN, meta_for
-
 from edith_companion.perception import geo
 
 

@@ -5,7 +5,6 @@ IDF1 ≥ 0.8. Machine tracks are always affiliation unknown (I6)."""
 import random
 
 from _e_synth import K720, ORIGIN, Target, detections, lawnmower, majority_entity, meta_for
-
 from edith_bench.goal2.metrics import idf1
 from edith_companion.perception.pipeline import FeedConfig, Perception
 from edith_companion.perception.tracker import Meas, Tracker
@@ -34,7 +33,7 @@ def run_lawnmower(seed: int):
             first_in.setdefault(ent, t_ms)
         p.process("D1", meta, dets)
         hyp = {d["track_id"]: d["_enu"] for d in p.tracks()
-               if d["status"] == "confirmed" and d["last_seen_ms"] >= t_ms - 1000}
+               if d["status"] == "confirmed" and d["last_seen_ms"] == t_ms}
         frames.append((inview, hyp))
     return p, first_in, frames
 

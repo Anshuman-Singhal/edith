@@ -52,12 +52,14 @@ class TrackerParams:
     max_misses_tentative: int = 2               # consecutive in-view misses
     max_misses_confirmed: int = 6
     max_coast_s: float = 20.0                   # since last hit (also covers out-of-view)
+    max_gate: float = 40.0                      # absolute innovation cap (m or px)
+    low_pass_max_age_ms: int = 1500             # 2nd pass only for recently-hit tracks
 
     @classmethod
     def image(cls) -> TrackerParams:
         return cls(space="image", accel_sigma={"person": 60.0, "vehicle": 150.0, "other": 80.0},
                    vel0_sigma={"person": 40.0, "vehicle": 150.0, "other": 60.0},
-                   max_coast_s=6.0)
+                   max_coast_s=6.0, max_gate=250.0)
 
 
 class KTrack:
@@ -209,11 +211,15 @@ class Tracker:
         unmatched_t = list(self.tracks)
         matched: set[int] = set()
 
-        def assign(ms: list[Meas]) -> list[Meas]:
+        def assign(ms: list[Meas], low: bool = False) -> list[Meas]:
             pairs = []
             for i, m in enumerate(ms):
                 for t in unmatched_t:
                     if t.cls != m.cls:
+                        continue
+                    if low and t_ms - t.last_ms > self.p.low_pass_max_age_ms:
+                        continue
+                    if float(np.hypot(*(m.z - t.x[:2]))) > self.p.max_gate:
                         continue
                     d2 = t.d2(m)
                     if d2 < GATE_D2:
@@ -230,7 +236,7 @@ class Tracker:
             return [m for i, m in enumerate(ms) if i not in used_m]
 
         left_hi = assign(hi)
-        assign(lo)
+        assign(lo, low=True)
         for t in unmatched_t:
             if visible is None or visible(t.pos):
                 t.miss(t_ms)

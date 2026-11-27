@@ -7,8 +7,7 @@ import random
 from dataclasses import dataclass
 
 import numpy as np
-
-from edith_companion.perception._compat import Origin
+from edith_common.geo import Origin
 from edith_companion.perception.geo import (
     CamPose,
     Intrinsics,
