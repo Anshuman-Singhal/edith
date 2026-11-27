@@ -1,0 +1,23 @@
+# RayNeo Mercury SDK lock (WS-G, C44, L13). Read by tools/fetch_rayneo_sdk.sh.
+# Only the vendor *sample zip* is fetched; the Mercury AAR is extracted from it.
+# Hashes recorded from the zip downloaded on 2026-11-23 [probed by platform r3].
+version=0.2.6
+sample_zip_name=MercuryAndroidSample_v0.2.6.zip
+sample_zip_sha256=1c78e3c488d805bf8a1f78edbc40c959a50bb33ee1e8d4d55c64555351341f47
+# Gitbook download URL. It may need a ?token=... suffix that the vendor page rotates, so
+# `--from <local zip>` is the primary path; `--url <full url>` overrides this one.
+sample_zip_url=https://4087018000-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FjIQHuGUxIAgRKVtAadnl%2Fuploads%2FO2UjAdWXXAk5MGbIzK6P%2FMercuryAndroidSample_v0.2.6.zip?alt=media
+mercury_aar_entry=x3/app/libs/MercuryAndroidSDK-v0.2.6-20260310143142_94a01a90.aar
+mercury_aar_sha256=5d408e2c5d80e8ae746c42abbda50012b50617005adfeb397661bec9c9be2676
+# Vendor platform keystore shipped in the zip: deleted after extraction, never used.
+keystore_entry=x3/xr2-platform.jks
+# Runtime deps for the generated POM (7 groups). The sample build.gradle pins the first three;
+# the rest are pinned here (r3 m8, C106). Gradle upgrades them to the app's versions.
+pom_dep=androidx.appcompat:appcompat:1.3.0
+pom_dep=androidx.fragment:fragment-ktx:1.5.3
+pom_dep=androidx.lifecycle:lifecycle-runtime-ktx:2.5.1
+pom_dep=androidx.activity:activity-ktx:1.5.1
+pom_dep=androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1
+pom_dep=androidx.recyclerview:recyclerview:1.2.1
+pom_dep=androidx.databinding:viewbinding:7.2.1
+pom_dep=org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4

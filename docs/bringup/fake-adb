@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Fake adb for `tools/bringup.sh --dry-run` (WS-G). Answers the commands bringup.sh uses with
+# canned RayNeo-like values (all INVENTED, not device facts) and logs every call to
+# $FAKE_ADB_LOG. The first `install` fails with INSTALL_FAILED_UPDATE_INCOMPATIBLE so the
+# debug-key reinstall path (C106) is exercised.
+set -euo pipefail
+STATE="${FAKE_ADB_STATE:-${TMPDIR:-/tmp}/fake-adb-state}"
+mkdir -p "$STATE"
+echo "adb $*" >> "${FAKE_ADB_LOG:-$STATE/log}"
+[[ "${1:-}" == "-s" ]] && shift 2
+cmd="${1:-}"; shift || true
+case "$cmd" in
+  version) echo "Android Debug Bridge version 1.0.41 (fake)";;
+  start-server|kill-server|disconnect) ;;
+  devices) printf 'List of devices attached\nFAKE0X3PRO\tdevice\n\n';;
+  tcpip) echo "restarting in TCP mode port: ${1:-5555}";;
+  connect) echo "connected to ${1:-}";;
+  install)
+    if [[ ! -f "$STATE/installed_once" ]]; then
+      touch "$STATE/installed_once"
+      echo "Performing Streamed Install"
+      echo "adb: failed to install ${!#}: Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE: Existing package edith.selftest signatures do not match newer version; ignoring!]"
+      exit 1
+    fi
+    echo "Performing Streamed Install"; echo "Success";;
+  uninstall) echo "Success";;
+  pull)
+    src="$1"; dst="$2"; mkdir -p "$dst/results/20261130T150000Z"
+    cat > "$dst/results/20261130T150000Z/results.json" <<'JSON'
+{"schema":"edith.bringup.results/v1","run_id":"20261130T150000Z","created_at":"2026-11-30T15:00:00Z","updated_at":"2026-11-30T15:00:01Z",
+ "app":{"package":"edith.selftest","flavor":"rayneo","version_name":"fake","version_code":1,"platform":"rayneo","git":null},
+ "device":{"model":"FAKE"},"display":{},"provisioning":{"peer":null,"token_set":false},"tests":{}}
+JSON
+    echo "$src: 1 file pulled (fake)";;
+  shell)
+    sub="$*"
+    case "$sub" in
+      "getprop ro.build.version.release") echo 12;;
+      "getprop ro.build.version.sdk") echo 32;;
+      "getprop ro.product.model") echo "FAKE X3 Pro";;
+      "getprop ro.product.manufacturer") echo "FAKE";;
+      "getprop ro.product.board") echo "fakeboard";;
+      "getprop ro.product.device") echo "fakedevice";;
+      "getprop ro.build.fingerprint") echo "fake/fake/fake:12/FAKE/1:user/release-keys";;
+      "getprop ro.serialno") echo "FAKE0X3PRO";;
+      getprop*) echo "";;
+      "dumpsys sensorservice"*) echo "Sensor List:"; echo "0x00000001) FAKE Accelerometer | FAKE | ver: 1 | type: android.sensor.accelerometer";;
+      "wm size") echo "Physical size: 1280x480";;
+      "wm density") echo "Physical density: 160";;
+      "dumpsys display"*) echo "mBaseDisplayInfo=DisplayInfo{\"Built-in Screen\", 1280 x 480, 60.0 fps (FAKE)}";;
+      "dumpsys gfxinfo"*) echo "Total frames rendered: 900"; echo "Janky frames: 9 (1.00%)";;
+      "settings list"*) echo "fake_natural_mode=1";;
+      "pm list packages"*) echo "package:edith.selftest";;
+      "am start"*) echo "Starting: Intent { cmp=edith.selftest/.SelfTestActivity }";;
+      "ip -f inet addr show wlan0") echo "    inet 192.0.2.50/24 brd 192.0.2.255 scope global wlan0";;
+      "ls "*) echo "20261130T150000Z";;
+      *) echo "";;
+    esac;;
+  *) echo "fake-adb: unsupported: $cmd $*" >&2; exit 1;;
+esac
