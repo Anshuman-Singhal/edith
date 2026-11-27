@@ -49,6 +49,11 @@ This module is owned by WS-D even though it sits under `common/`; that ownership
   - The action survives link recovery. It is cleared only by a mode change or a disarm.
   - A mode command (e.g. the safety-stop hold) is accepted during the delay and during the action.
   - `AssetState.failsafe.dll_countdown_s = COM_DL_LOSS_T + COM_FAIL_ACT_T − silence_s`.
+  - **Link recovery during the hold (architect r4 nit 1; PX4 v1.18.0-rc2 `framework.cpp`, re-read in D2):** the delayed action is **not** cancelled. `removeAction()` keeps an `OnModeChangeOrDisarm` action and only flags it, and `_current_delay` keeps counting down, so the vehicle takes `NAV_DLL_ACT` at `t_loss + COM_FAIL_ACT_T` even if the link came back during the hold. Only a mode change (takeover), a disarm, or Hold being unavailable clears it. The vignette's RTL at ≈t324–325 therefore does not depend on the jam ending at t325, and the jam need not be lengthened.
+  - **Timestamp order:** MockVehicle evaluates the failsafe deadlines at a packet's arrival time *before* it processes that packet (`MockVehicle.feed` → `advance(t)` → failsafe update → handle), and logs the transition at the exact deadline, so a recovering packet processed late under CPU load cannot cancel or delay the RTL.
+  - **Start-delay refill (sim r4 nit 1):** after a delayed hold, the start delay refills at dt/4 up to `COM_FAIL_ACT_T`; a second loss within ≈20 s gets a shorter hold. `DllFailsafe` models this.
+  - Mock times link loss from the last GCS `HEARTBEAT` (as PX4 does); the companion times it from any inbound message, so PX4/Mock may lead the companion's view by ≤1 s (sim r4 nit 2).
+  - UNVERIFIED until `record-px4`: whether PX4 treats a hold that equals the pre-failsafe user-intended mode as a takeover (Mock treats every accepted mode command as one); whether PX4 reports AUTO.LAND (Mock) or stays AUTO.RTL during RTL's descent; the PX4 types of the profile params (`edith_common.px4.encode.PARAM_TYPES`).
 - **Search planner (C87):** `plan_search(polygon, alt_agl_m, hfov_deg, pitch_deg, overlap) → [waypoints]`. `AssetAdapter.search` and the lint pre-run both call it, so they fly the same lawnmower path. Spacing = centre-line ground width × (1 − overlap).
 - **Mission protocol:** the `MISSION_COUNT` / `MISSION_REQUEST_INT` / `MISSION_ITEM_INT` / `MISSION_ACK` handshake. Fence items use type 5001.
 - **Parameters:** byte-wise int32 `PARAM_SET` encoding.
@@ -107,6 +112,9 @@ companion :16968 ⇄ linkshaper tak :16969 ⇄ fake CoT router :18088 (UDP fan-o
 | Key | Meaning |
 |---|---|
 | `version: 2`, `seed` | Format version; one seed for mover, noise, gt |
+| `name`, `duration_s` | Scenario name; run length in sim s (default 360; `to: end` anchors here) |
+| `disclosures[]` | Header strings; every `profile_overrides` key must appear in one (loader-enforced) |
+| `detector` | `gt` (default) or `real` |
 | `max_speed` | Highest `--speed` the scenario may run at (default 4; `demo_live` 1). The lint evaluates bounds at this speed (§6) |
 | `origin{lat, lon, alt_msl, geoid_n_m}` | ENU origin; geoid N for `hae` |
 | `vehicle_profile`, `profile_overrides` | §1 |
@@ -118,7 +126,7 @@ companion :16968 ⇄ linkshaper tak :16969 ⇄ fake CoT router :18088 (UDP fan-o
 | `entities[]` | `id, cls (vehicle|person|animal), sprite, path[] or loiter_radius_m` |
 | `gt_detector` | `pd, fa_per_h, latency_ms, bbox_noise_px, rate_hz, confusions{entity: cls}, clutter[]` |
 | `events[]` | `id` plus `t:` (absolute sim s) **or** `on:` (`card_shown: <event>`, `alert_shown: {gt_entity}`, `event: <id>`, or a GT anchor `gt: {asset_mode|entity_in_fov, …}`) with `after_s`; action `say` (tasking `say` events also carry `cmd{asset, steps, target}`, C87), `touch`, `jam{duration_s, links}`, `assert_hold` |
-| `beats[]` | Live-demo only: `{id, cmd?, anchor, window{after, from_s, to_s}}`, checked by `lint --beats` (§6, C92) |
+| `beats[]` | Live-demo only: `{id, ref?, cmd?, anchor, window{after, from_s, to_s}}`, checked by `lint --beats` (§6, C92). `anchor` is one of `{alert_shown: {gt_entity}}`, `{gt: asset_mode, asset, mode}` (first occurrence at/after `window.after`), `{gt: entity_in_fov, …}`, `{asset_link: {asset, link: lost}}`, `{event: id}`. `ref` labels what the window is measured from (r4 PM nit B4) |
 | `expect[]` | Anchored assertions (§6); a headless run exits non-zero if any fails |
 
 ### 5.1 Runner seams (C87)
@@ -170,6 +178,8 @@ with `within_s`. Absolute `by_t` is not allowed. The predicates are:
 | Failsafe mode (`gt{mode: AUTO.RTL}` after a jam) | `COM_DL_LOSS_T` + `COM_FAIL_ACT_T` |
 | `tak{link: lost}` | 3 |
 | `tak{link: ok}` after a window | 0 |
+
+Pre-run models (D2, `sim/edith_sim/scenario/prerun.py`): card shown = say + s·L_card; dispatch = card + max(lockout, confirm − card) + s·L_cmd; the next composed step (MISSION_START or NAV_TAKEOFF) follows the arm by 1 s; orbit is sent once alt ≥ 0.9 × target; an alert is shown 3 s after an entity enters a drone's analytic FOV, + gt `latency_ms` + s·L_card; a stop holds every asset at stop + s·L_cmd; GCS heartbeats are 1 Hz and dropped inside `mavlink:` jam windows. Predicates with no row (`wire`, `alerts`, `router_log`, `assoc_friend`, `invariant_violations`, `cot` counts) contribute LB 0; an expect's LB is the max over its predicates; gt mode predicates take the max of the table formula and the pre-run measurement. Scenario YAML is parsed with true/false-only booleans, so `on:` and `video: off` stay strings.
 
 `./edith scenario lint <file>` fails when:
 
@@ -251,6 +261,8 @@ Kinematic sanity checks (all sim time):
 - **Jam:** D2 is `lost` at t320, holds in AUTO.LOITER until ≈t325, then enters AUTO.RTL. D2 is still airborne (descending) at t350, so the stop holds both drones.
 - **Wall clock:** at `--speed 4` the 360 s scenario takes 90 s of wall time.
 
+Pre-run (D2): D1 enters AUTO.MISSION at t36.2 and ends the search in LOITER at ≈t277; D2 enters POSCTL.ORBIT at t64.2, AUTO.LOITER (DLL hold) at t319 (last heartbeat t299), AUTO.RTL at t324, AUTO.LAND at ≈t343 and the stop hold at t351.2. D1 first holds deer-1 in view ≥3 s from ≈t81 (leg 1, looking east of track) and veh-7 from ≈t206.
+
 `demo_scout.yaml` and `demo_jam.yaml` are headless sub-scenarios that reuse this geometry. Replay appears only in `goal2_*.yaml` (C59), so CI never needs `data/`.
 
 ### 7.1 `scenarios/demo_live.yaml` (own layout, C92)
@@ -260,10 +272,10 @@ Kinematic sanity checks (all sim time):
 | Item | Placement | Beat window (from the scout confirm, speed 1) |
 |---|---|---|
 | Launch, drones, operator, teammates, NAI 1 | As in the vignette | — |
-| veh-7 | Parked at (−116, 160), on lawnmower leg 1 (flown north) | Alert ≤45 s |
-| deer-1 (planted false positive) | (−48, 260), on leg 2, `loiter_radius_m: 3` | Alert 80–100 s, after the Alert beat |
-| D2 | Tasked in the silent-touch beat (overwatch my position), so it is airborne for the jam | POSCTL.ORBIT before the jam |
-| Jam | `{id: jam, on: {gt: asset_mode, asset: drone2, mode: POSCTL.ORBIT}, after_s: 20, jam: {duration_s: 25, links: [mavlink:drone2, tak:*]}}` | D2 `lost` ≤8 s and AUTO.RTL ≤13 s after jam start |
+| veh-7 | Parked at (−116, 160), on lawnmower leg 1 (flown north) | **From the scout confirm:** alert ≤45 s (pre-run 38.2 s, so the r4 PM B2 fallback to (−118, 120) was not needed) |
+| deer-1 (planted false positive) | (−48, 260), on leg 2, `loiter_radius_m: 3` | **From the scout confirm:** alert 80–100 s (pre-run 94.3 s), after the Alert beat |
+| D2 | Tasked in the silent-touch beat (overwatch my position), so it is airborne for the jam | **From the silent-task confirm:** POSCTL.ORBIT ≤30 s (pre-run 19.3 s) |
+| Jam | `{id: jam, on: {gt: asset_mode, asset: drone2, mode: POSCTL.ORBIT}, after_s: 5, jam: {duration_s: 25, links: [mavlink:drone2, tak:*]}}` (`after_s` 5 per r4 PM nit B3) | **From jam start:** D2 `lost` ≤10 s (LB 8) and AUTO.RTL ≤15 s (LB 13) (`to_s` 10 / 15 per r4 PM nit B1) |
 
 `edith scenario lint --beats scenarios/demo_live.yaml` checks each beat's GT anchor in the deterministic pre-run against its window. Owner Simon; due at the W7 G3 gate.
 
