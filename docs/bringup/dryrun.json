@@ -2,14 +2,14 @@
   "schema": "edith.bringup.host/v1",
   "dry_run": true,
   "tier": "g0",
-  "started_at": "2026-11-27T18:16:06Z",
-  "ended_at": "2026-11-27T18:16:14Z",
+  "started_at": "2026-11-27T18:21:37Z",
+  "ended_at": "2026-11-27T18:21:39Z",
   "adb": "docs/bringup/fake-adb",
   "serial": "FAKE0X3PRO",
   "package": "edith.selftest",
   "apk": {
-    "path": "glasses/selftest/build/outputs/apk/rayneo/debug/selftest-rayneo-debug.apk",
-    "sha256": "9dcb5c232bd37a0752b75667f487c444ddcc689793302f1a0a5beecc2aa13e12"
+    "path": "dist/edith-selftest-rayneo-debug.apk",
+    "sha256": "7a4a1f274123e793fde9f748bb4b41ed158fa28fc8e28242dbef5e35a2213ca5"
   },
   "steps": [
     {
@@ -46,7 +46,7 @@
       "id": "install",
       "name": "Install selftest APK",
       "status": "pass",
-      "detail": "installed edith.selftest (sha256 9dcb5c232bd3\u2026), runtime permissions granted (-g)"
+      "detail": "installed edith.selftest (sha256 7a4a1f274123\u2026), runtime permissions granted (-g)"
     },
     {
       "id": "T3",
@@ -90,7 +90,7 @@
       "id": "pull",
       "name": "Pull results",
       "status": "pass",
-      "detail": "1 results.json pulled to /tmp/bringup-dry.o7mUDf/glasses; gfxinfo: Janky frames: 9 (1.00%)",
+      "detail": "1 results.json pulled to /tmp/bringup-dry.4jV7SJ/glasses; gfxinfo: Janky frames: 9 (1.00%)",
       "data": {
         "gfxinfo_janky": "Janky frames: 9 (1.00%)"
       }
@@ -102,7 +102,7 @@
     "token_set": true
   },
   "pull": {
-    "dest": "/tmp/bringup-dry.o7mUDf/glasses",
+    "dest": "/tmp/bringup-dry.4jV7SJ/glasses",
     "ok": true
   },
   "ok": true
