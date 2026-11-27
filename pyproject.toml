@@ -1,0 +1,92 @@
+# E.D.I.T.H. uv workspace root (WS-A). uv.lock is authoritative; WS-A is its sole writer.
+# Other workstreams request dependency changes in docs/requests/<ws>.md (PLAN §5.1).
+[project]
+name = "edith"
+version = "0.1.0"
+description = "E.D.I.T.H. Phase 0: voice-first operator HUD for AR glasses (simulation)"
+requires-python = ">=3.13,<3.14"
+readme = "README.md"
+license = "Proprietary"
+dependencies = [
+  "edith-common",
+  "edith-companion",
+  "edith-sim",
+  "edith-ml",
+  "edith-bench",
+  "edith-tools",
+  # PLAN §4.2 pinned stack
+  "numpy==2.5.3",
+  "onnxruntime==1.29.0",
+  "opencv-python-headless==5.0.0.93",
+  "pydantic==2.13.5",
+  "jsonschema==4.26.0",
+  "aiohttp>=3.11,<4",
+  "lark==1.3.1",
+  "pymavlink==2.4.50",
+  "pymap3d==3.2.0",
+  "mgrs==1.7.1",
+  "av>=14",
+  "pillow>=11",
+  "fonttools>=4.55",
+  "pyyaml>=6.0.2",
+  "psutil>=6",
+]
+
+[project.optional-dependencies]
+# Wheels probed on 3.13 but platform coverage is UNVERIFIED -> extras (D0).
+voice = [
+  "moonshine-voice==0.1.6",
+  "sherpa-onnx==2.0.3",
+  "vosk==0.3.45",
+  "kokoro-onnx>=0.4",
+]
+tak = [
+  "pytak>=7",
+  "takproto>=2",
+]
+
+[dependency-groups]
+dev = [
+  "pytest==9.1.1",
+  "hypothesis>=6.120",
+  "ruff>=0.8",
+]
+
+[tool.uv]
+package = false
+default-groups = ["dev"]
+
+[tool.uv.workspace]
+members = ["common", "companion", "sim", "ml", "bench", "tools"]
+
+[tool.uv.sources]
+edith-common = { workspace = true }
+edith-companion = { workspace = true }
+edith-sim = { workspace = true }
+edith-ml = { workspace = true }
+edith-bench = { workspace = true }
+edith-tools = { workspace = true }
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+extend-exclude = ["glasses", "data", "models", "runs", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+addopts = "-q --strict-markers"
+testpaths = ["common", "companion", "sim", "ml", "bench", "tools", "tests"]
+norecursedirs = ["glasses", "data", "models", "runs", "dist", ".venv", "node_modules", "build"]
+markers = [
+  "contract: schema/fixture/adapter contract tests (./edith test contract)",
+  "integration: multi-process integration tests (./edith test integration)",
+  "e2e: end-to-end scenario runs (./edith test e2e)",
+  "e2e_px4: e2e against PX4 SIH (approval-gated)",
+  "golden: rendered golden comparisons",
+  "lint: repository lints (./edith test lint)",
+  "needs_data: needs gitignored data/; skips with a reason when absent",
+  "slow: excluded from unit",
+]

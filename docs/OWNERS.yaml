@@ -1,0 +1,178 @@
+# Exclusive write ownership per workstream (PLAN §5.1, L23, C73, C107). WS-A owns this file.
+# tests/lint/test_owners.py: every tracked file must match exactly one workstream after
+# that workstream's `exclude` globs are applied. Globs use pathlib full_match ('**' = any depth).
+# Each WS also owns tools/edith_tools/commands/<ws>.py, docs/requests/<ws>.md and
+# docs/walkthroughs/<ws>.md.
+workstreams:
+  A:
+    name: Contracts & repo
+    owner: Anshuman
+    paths:
+      - pyproject.toml
+      - uv.lock
+      - edith
+      - README.md
+      - .gitignore
+      - .github/**
+      - schemas/**
+      - common/**
+      - tools/pyproject.toml
+      - tools/edith_tools/__init__.py
+      - tools/edith_tools/cli/**
+      - tools/edith_tools/fetch/**
+      - tools/edith_tools/commands/__init__.py
+      - tools/edith_tools/commands/a.py
+      - tools/tests/a/**
+      - tests/lint/**
+      - docs/OWNERS.yaml
+      - docs/LICENSES.md
+      - docs/PLAN.md
+      - docs/spec/interfaces.md
+      - docs/council/**
+      - docs/requests/README.md
+      - docs/requests/a.md
+      - docs/walkthroughs/a.md
+    exclude:
+      - common/edith_common/px4/**
+      - common/tests/px4/**
+  B:
+    name: Companion runtime & integration
+    owner: Arjun
+    paths:
+      - companion/pyproject.toml
+      - companion/edith_companion/__init__.py
+      - companion/edith_companion/__main__.py
+      - companion/edith_companion/gateway/**
+      - companion/edith_companion/bus/**
+      - companion/edith_companion/eventlog/**
+      - companion/edith_companion/world/**
+      - companion/edith_companion/assets/**
+      - companion/edith_companion/config/**
+      - companion/tests/**
+      - tools/edith_tools/supervisor/**
+      - tools/edith_tools/fake_glasses.py
+      - tools/edith_tools/commands/b.py
+      - tools/tests/b/**
+      - tests/e2e/**
+      - bench/edith_bench/pareto/**
+      - bench/tests/pareto/**
+      - docs/requests/b.md
+      - docs/walkthroughs/b.md
+    exclude:
+      - companion/tests/voice/**
+      - companion/tests/intent/**
+      - companion/tests/safety/**
+      - companion/tests/perception/**
+      - companion/tests/tak/**
+      - companion/tests/alerts/**
+      - companion/tests/hud/**
+  C:
+    name: Voice, intent & safety
+    owner: Om
+    paths:
+      - companion/edith_companion/voice/**
+      - companion/edith_companion/intent/**
+      - companion/edith_companion/safety/**
+      - companion/tests/voice/**
+      - companion/tests/intent/**
+      - companion/tests/safety/**
+      - bench/edith_bench/goal1/**
+      - bench/tests/goal1/**
+      - bench/noise.lock.yaml
+      - tools/edith_tools/capture_asr.py
+      - tools/edith_tools/commands/c.py
+      - tools/tests/c/**
+      - docs/spec/voice.md
+      - docs/requests/c.md
+      - docs/walkthroughs/c.md
+  D:
+    name: Sim
+    owner: Simon
+    paths:
+      - sim/**
+      - common/edith_common/px4/**
+      - common/tests/px4/**
+      - scenarios/**
+      - tools/install_px4.sh
+      - tools/edith_tools/commands/d.py
+      - tools/tests/d/**
+      - docs/spec/sim.md
+      - docs/requests/d.md
+      - docs/walkthroughs/d.md
+    exclude:
+      - sim/edith_sim/gt_detector.py
+      - sim/tests/gt_detector/**
+      - sim/edith_sim/teammates/**
+      - sim/tests/teammates/**
+  E:
+    name: ML & perception
+    owner: Anshuman
+    paths:
+      - ml/**
+      - companion/edith_companion/perception/**
+      - companion/tests/perception/**
+      - sim/edith_sim/gt_detector.py
+      - sim/tests/gt_detector/**
+      - bench/pyproject.toml
+      - bench/edith_bench/__init__.py
+      - bench/edith_bench/goal2/**
+      - bench/edith_bench/placement/**
+      - bench/tests/goal2/**
+      - bench/tests/placement/**
+      - tools/edith_tools/commands/e.py
+      - tools/tests/e/**
+      - docs/spec/eval.md
+      - docs/requests/e.md
+      - docs/walkthroughs/e.md
+  F:
+    name: TAK & cost
+    owner: Simon
+    paths:
+      - companion/edith_companion/tak/**
+      - companion/tests/tak/**
+      - sim/edith_sim/teammates/**
+      - sim/tests/teammates/**
+      - tools/edith_tools/cot_router.py
+      - tools/edith_tools/cost_model.py
+      - tools/edith_tools/commands/f.py
+      - tools/tests/f/**
+      - docs/cost/**
+      - docs/requests/f.md
+      - docs/walkthroughs/f.md
+  G:
+    name: Glasses platform
+    owner: Arjun
+    paths:
+      - glasses/settings.gradle.kts
+      - glasses/build.gradle.kts
+      - glasses/gradle.properties
+      - glasses/gradlew
+      - glasses/gradlew.bat
+      - glasses/gradle/**
+      - glasses/platform-api/**
+      - glasses/platform-rayneo/**
+      - glasses/platform-generic/**
+      - glasses/app-android/**
+      - glasses/selftest/**
+      - tools/fetch_rayneo_sdk.sh
+      - tools/bringup.sh
+      - tools/edith_tools/commands/g.py
+      - tools/tests/g/**
+      - docs/bringup/**
+      - docs/requests/g.md
+      - docs/walkthroughs/g.md
+  H:
+    name: HUD
+    owner: Alisha
+    paths:
+      - glasses/hud-core/**
+      - glasses/emulator-desktop/**
+      - companion/edith_companion/alerts/**
+      - companion/edith_companion/hud/**
+      - companion/tests/alerts/**
+      - companion/tests/hud/**
+      - tools/edith_tools/commands/h.py
+      - tools/tests/h/**
+      - docs/spec/hud.md
+      - docs/requests/h.md
+      - docs/walkthroughs/h.md

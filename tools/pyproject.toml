@@ -1,0 +1,12 @@
+[project]
+name = "edith-tools"
+version = "0.1.0"
+requires-python = ">=3.13,<3.14"
+dependencies = ["edith-common"]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["edith_tools"]

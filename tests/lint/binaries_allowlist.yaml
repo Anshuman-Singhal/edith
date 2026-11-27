@@ -1,0 +1,11 @@
+# Binary files allowed in git (PLAN §4.5). Everything else binary is fetched by script.
+allow:
+  - glob: glasses/gradle/wrapper/gradle-wrapper.jar
+  - glob: "**/B612-*.ttf"
+    max_kb: 400
+  - glob: sim/edith_sim/sprites/*.png
+    max_kb: 200
+  - glob: "glasses/**/goldens/**/*.png"
+    max_kb: 400
+  - glob: "glasses/**/src/main/res/mipmap-*/*.png"
+    max_kb: 64

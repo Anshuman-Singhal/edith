@@ -1,0 +1,32 @@
+# Fetched or generated — never committed (PLAN §4.5)
+data/
+models/
+runs/
+dist/
+glasses/platform-rayneo/libs/
+*.apk
+*.aab
+*.aar
+*.onnx
+*.tflite
+*.jks
+*.keystore
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+*.egg-info/
+build/
+
+# Gradle / Android / IDE
+.gradle/
+**/build/
+glasses/local.properties
+.kotlin/
+.idea/
+*.iml
+.DS_Store
