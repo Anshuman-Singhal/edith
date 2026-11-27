@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/udp.detections.schema.json",
+  "title": "udp.detections",
+  "description": "UDP 5800+i payload: a bare JSON array of Detection (C59).",
+  "type": "array",
+  "items": {
+    "$ref": "Detection.schema.json"
+  }
+}

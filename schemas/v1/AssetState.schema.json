@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/AssetState.schema.json",
+  "title": "AssetState",
+  "type": "object",
+  "required": [
+    "asset_id",
+    "callsign",
+    "chip",
+    "kind",
+    "link",
+    "pos",
+    "att",
+    "vel_ned",
+    "battery_pct",
+    "mode",
+    "armed",
+    "landed",
+    "failsafe",
+    "task",
+    "sensors"
+  ],
+  "properties": {
+    "asset_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "callsign": {
+      "type": "string",
+      "minLength": 1
+    },
+    "chip": {
+      "type": "string",
+      "pattern": "^D[1-9]$"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "quad",
+        "fixed_wing",
+        "vtol",
+        "ugs"
+      ]
+    },
+    "link": {
+      "type": "object",
+      "required": [
+        "state",
+        "last_heard_ms"
+      ],
+      "properties": {
+        "state": {
+          "$ref": "defs.schema.json#/$defs/LinkState"
+        },
+        "last_heard_ms": {
+          "$ref": "defs.schema.json#/$defs/TsMs"
+        }
+      },
+      "additionalProperties": true
+    },
+    "pos": {
+      "$ref": "defs.schema.json#/$defs/Pos"
+    },
+    "att": {
+      "$ref": "defs.schema.json#/$defs/Att"
+    },
+    "vel_ned": {
+      "type": "object",
+      "required": [
+        "n_mps",
+        "e_mps",
+        "d_mps"
+      ],
+      "properties": {
+        "n_mps": {
+          "type": "number"
+        },
+        "e_mps": {
+          "type": "number"
+        },
+        "d_mps": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": true
+    },
+    "battery_pct": {
+      "$ref": "defs.schema.json#/$defs/Pct"
+    },
+    "mode": {
+      "type": "string",
+      "minLength": 1
+    },
+    "armed": {
+      "type": "boolean"
+    },
+    "landed": {
+      "type": "boolean"
+    },
+    "failsafe": {
+      "type": "object",
+      "required": [
+        "dll_action"
+      ],
+      "properties": {
+        "dll_action": {
+          "type": "string",
+          "enum": [
+            "hold",
+            "return",
+            "land",
+            "none"
+          ]
+        },
+        "dll_countdown_s": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": true
+    },
+    "task": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "proposal_id": {
+          "$ref": "defs.schema.json#/$defs/Id"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "defs.schema.json#/$defs/Verb"
+          }
+        },
+        "step_idx": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "sensors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sensor_id",
+          "kind",
+          "hfov_deg",
+          "w",
+          "h",
+          "stream"
+        ],
+        "properties": {
+          "sensor_id": {
+            "$ref": "defs.schema.json#/$defs/Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "eo",
+              "ir"
+            ]
+          },
+          "hfov_deg": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 180
+          },
+          "w": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "h": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "stream": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/voice.partial.schema.json",
+  "title": "voice.partial",
+  "type": "object",
+  "required": [
+    "session_id",
+    "text",
+    "conf"
+  ],
+  "properties": {
+    "session_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "text": {
+      "type": "string"
+    },
+    "conf": {
+      "$ref": "defs.schema.json#/$defs/ConfOrNull"
+    }
+  },
+  "additionalProperties": true
+}

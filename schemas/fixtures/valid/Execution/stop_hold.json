@@ -1,0 +1,11 @@
+{
+  "exec_id": "ex-0030",
+  "proposal_id": null,
+  "stop_id": "stop-0001",
+  "asset_id": "drone1",
+  "step_idx": 0,
+  "verb": "hold",
+  "status": "sent",
+  "detail": "DO_SET_MODE AUTO.LOITER",
+  "ts_ms": 1795000050010
+}

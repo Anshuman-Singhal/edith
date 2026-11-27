@@ -1,0 +1,12 @@
+{
+  "battery_pct": 76.0,
+  "current_ua": -412000,
+  "voltage_mv": 3912,
+  "temp_c": 38.5,
+  "thermal_status": 1,
+  "thermal_headroom": 0.42,
+  "fps": 30.0,
+  "decode_ms_p95": 7.8,
+  "rtt_ms": 11.0,
+  "usb_connected": false
+}

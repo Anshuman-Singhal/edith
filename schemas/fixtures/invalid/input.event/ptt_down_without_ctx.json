@@ -1,0 +1,7 @@
+{
+  "_why": "ctx required on ptt_down (C101)",
+  "kind": "ptt_down",
+  "gesture_seq": 17,
+  "pointer_count": 1,
+  "held_ms": 300
+}

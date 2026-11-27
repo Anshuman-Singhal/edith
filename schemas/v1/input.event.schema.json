@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/input.event.schema.json",
+  "title": "input.event",
+  "description": "ctx is what was on screen at the first DOWN; required on ptt_down, bt_ptt_down, two_finger_hold (C101).",
+  "type": "object",
+  "required": [
+    "kind",
+    "gesture_seq",
+    "pointer_count"
+  ],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "tap",
+        "double_tap",
+        "triple_tap",
+        "slide_fwd",
+        "slide_back",
+        "slide_up",
+        "slide_down",
+        "ptt_down",
+        "ptt_up",
+        "two_finger_hold",
+        "back",
+        "bt_ptt_down",
+        "bt_ptt_up"
+      ]
+    },
+    "gesture_seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "pointer_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "held_ms": {
+      "$ref": "defs.schema.json#/$defs/DurMs"
+    },
+    "duration_ms": {
+      "$ref": "defs.schema.json#/$defs/DurMs"
+    },
+    "ctx": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "proposal_id": {
+          "$ref": "defs.schema.json#/$defs/Id"
+        },
+        "alert_id": {
+          "$ref": "defs.schema.json#/$defs/Id"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "ptt_down",
+              "bt_ptt_down"
+            ]
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "held_ms",
+          "ctx"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "two_finger_hold"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "duration_ms",
+          "ctx"
+        ]
+      }
+    }
+  ]
+}

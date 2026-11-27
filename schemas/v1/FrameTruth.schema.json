@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/FrameTruth.schema.json",
+  "title": "FrameTruth",
+  "description": "Sim-internal (runs/<ts>/frame_truth_<i>.jsonl); never sent to the companion.",
+  "type": "object",
+  "required": [
+    "frame_id",
+    "t_sim_ms",
+    "asset_id",
+    "objects"
+  ],
+  "properties": {
+    "frame_id": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "t_sim_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "asset_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "entity_id",
+          "cls",
+          "bbox_norm",
+          "visible_frac",
+          "range_m",
+          "lat",
+          "lon"
+        ],
+        "properties": {
+          "entity_id": {
+            "$ref": "defs.schema.json#/$defs/Id"
+          },
+          "cls": {
+            "type": "string",
+            "minLength": 1
+          },
+          "bbox_norm": {
+            "$ref": "defs.schema.json#/$defs/BboxNorm"
+          },
+          "visible_frac": {
+            "$ref": "defs.schema.json#/$defs/Conf"
+          },
+          "range_m": {
+            "type": "number",
+            "minimum": 0
+          },
+          "lat": {
+            "$ref": "defs.schema.json#/$defs/Lat"
+          },
+          "lon": {
+            "$ref": "defs.schema.json#/$defs/Lon"
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

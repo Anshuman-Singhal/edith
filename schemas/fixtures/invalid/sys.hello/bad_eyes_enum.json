@@ -1,0 +1,31 @@
+{
+  "_why": "display.eyes not in enum",
+  "role": "glasses",
+  "proto": [
+    1
+  ],
+  "token": "tok-7f3a9c",
+  "device": {
+    "model": "RayNeo X3 Pro",
+    "fingerprint": "rayneo/x3pro/x3pro:14/UKQ1.240101/1:user/release-keys",
+    "sdk_int": 34
+  },
+  "display": {
+    "win_w": 1280,
+    "win_h": 480,
+    "eye_w": 640,
+    "eye_h": 480,
+    "eyes": "stereo"
+  },
+  "input": {
+    "ptt": "hold",
+    "temple_confirm": false
+  },
+  "caps": {
+    "inference": [
+      "tflite"
+    ],
+    "camera": true,
+    "tts": false
+  }
+}

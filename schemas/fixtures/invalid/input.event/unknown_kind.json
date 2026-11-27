@@ -1,0 +1,10 @@
+{
+  "_why": "kind not in enum",
+  "kind": "long_press",
+  "gesture_seq": 17,
+  "pointer_count": 1,
+  "held_ms": 300,
+  "ctx": {
+    "proposal_id": "prop-0007"
+  }
+}

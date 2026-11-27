@@ -1,0 +1,120 @@
+{
+  "_why": "proposal.rows has exactly 2",
+  "seq": 640,
+  "ts_ms": 1795000001200,
+  "mode": "day",
+  "declutter": "full",
+  "quiet": false,
+  "operator": {
+    "lat": 40.0698649,
+    "lon": -88.6302344,
+    "heading_deg": 41.5,
+    "heading_unc_deg": 6.0
+  },
+  "status": {
+    "tak": "ok",
+    "gps": "sim",
+    "companion_battery_pct": 64.0,
+    "data_age_ms": 0,
+    "rec": true
+  },
+  "assets": [
+    {
+      "asset_id": "drone1",
+      "chip": "D1",
+      "mode_label": "SEARCH",
+      "battery_pct": 81.0,
+      "link": "ok",
+      "task_label": "NAI 1"
+    },
+    {
+      "asset_id": "drone2",
+      "chip": "D2",
+      "mode_label": "ORBIT",
+      "battery_pct": 77.0,
+      "link": "ok",
+      "task_label": "OVW"
+    }
+  ],
+  "minimap": {
+    "range_m": 500.0,
+    "entities": [
+      {
+        "ref": "self",
+        "kind": "self",
+        "marked": false,
+        "rel_e_m": 0.0,
+        "rel_n_m": 0.0,
+        "heading_deg": 41.5,
+        "age_ms": 0,
+        "stale": false
+      },
+      {
+        "ref": "EDITH-SIM-tm-2",
+        "kind": "friend",
+        "marked": false,
+        "rel_e_m": -100.0,
+        "rel_n_m": 55.0,
+        "label": "1-2",
+        "age_ms": 1800,
+        "stale": false
+      },
+      {
+        "ref": "drone1",
+        "kind": "own_drone",
+        "marked": false,
+        "rel_e_m": 20.0,
+        "rel_n_m": 195.0,
+        "heading_deg": 2.0,
+        "label": "D1",
+        "age_ms": 100,
+        "stale": false
+      },
+      {
+        "ref": "t-0031",
+        "kind": "unknown",
+        "marked": false,
+        "rel_e_m": 80.0,
+        "rel_n_m": 315.0,
+        "age_ms": 100,
+        "stale": false
+      }
+    ],
+    "clusters": []
+  },
+  "tape": {
+    "carets": [
+      {
+        "ref": "drone1",
+        "bearing_deg": 5.9,
+        "style": "own_drone"
+      },
+      {
+        "ref": "t-0031",
+        "bearing_deg": 14.3,
+        "style": "unknown"
+      },
+      {
+        "ref": "EDITH-SIM-tm-2",
+        "bearing_deg": 298.8,
+        "style": "friend"
+      }
+    ]
+  },
+  "voice": {
+    "state": "await_confirm"
+  },
+  "proposal": {
+    "proposal_id": "prop-0007",
+    "rows": [
+      "x"
+    ],
+    "expires_in_ms": 9500,
+    "lockout_in_ms": 100,
+    "confirm_with": [
+      "voice",
+      "touch_companion"
+    ],
+    "state": "lockout"
+  }
+}

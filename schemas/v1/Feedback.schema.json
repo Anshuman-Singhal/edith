@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/Feedback.schema.json",
+  "title": "Feedback",
+  "description": "reclassify requires affiliation (human-only reclassification, I6).",
+  "type": "object",
+  "required": [
+    "track_id",
+    "verb",
+    "operator_id",
+    "method",
+    "alert_id",
+    "ts_ms"
+  ],
+  "properties": {
+    "track_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "verb": {
+      "type": "string",
+      "enum": [
+        "watch",
+        "mark",
+        "dismiss",
+        "undo_dismiss",
+        "say_again",
+        "details",
+        "reclassify"
+      ]
+    },
+    "operator_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "method": {
+      "type": "string",
+      "minLength": 1
+    },
+    "alert_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "ts_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "affiliation": {
+      "$ref": "defs.schema.json#/$defs/Affiliation"
+    }
+  },
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "verb": {
+            "const": "reclassify"
+          }
+        },
+        "required": [
+          "verb"
+        ]
+      },
+      "then": {
+        "required": [
+          "affiliation"
+        ]
+      }
+    }
+  ]
+}

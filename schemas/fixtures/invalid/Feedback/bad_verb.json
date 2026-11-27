@@ -1,0 +1,9 @@
+{
+  "_why": "verb not in enum",
+  "track_id": "t-0029",
+  "verb": "engage",
+  "operator_id": "VIKING 1-1",
+  "method": "voice",
+  "alert_id": "al-0011",
+  "ts_ms": 1795000009000
+}

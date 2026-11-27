@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/Track.schema.json",
+  "title": "Track",
+  "description": "I6: affiliation_src=machine implies affiliation=unknown.",
+  "type": "object",
+  "required": [
+    "track_id",
+    "alias",
+    "cls",
+    "conf",
+    "hits",
+    "window",
+    "geo",
+    "vel",
+    "geo_quality",
+    "first_seen_ms",
+    "last_seen_ms",
+    "source_assets",
+    "status",
+    "novelty",
+    "affiliation",
+    "affiliation_src",
+    "cot_uid",
+    "det_ids"
+  ],
+  "properties": {
+    "track_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "alias": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cls": {
+      "$ref": "defs.schema.json#/$defs/Cls"
+    },
+    "conf": {
+      "$ref": "defs.schema.json#/$defs/Conf"
+    },
+    "hits": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "window": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "geo": {
+      "type": "object",
+      "required": [
+        "lat",
+        "lon",
+        "ce_m"
+      ],
+      "properties": {
+        "lat": {
+          "$ref": "defs.schema.json#/$defs/Lat"
+        },
+        "lon": {
+          "$ref": "defs.schema.json#/$defs/Lon"
+        },
+        "ce_m": {
+          "$ref": "defs.schema.json#/$defs/CeM"
+        }
+      },
+      "additionalProperties": true
+    },
+    "vel": {
+      "type": "object",
+      "required": [
+        "e_mps",
+        "n_mps"
+      ],
+      "properties": {
+        "e_mps": {
+          "type": "number"
+        },
+        "n_mps": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": true
+    },
+    "geo_quality": {
+      "type": "string",
+      "enum": [
+        "metric",
+        "pseudo"
+      ]
+    },
+    "first_seen_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "last_seen_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "source_assets": {
+      "type": "array",
+      "items": {
+        "$ref": "defs.schema.json#/$defs/Id"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "confirmed",
+        "watched",
+        "marked",
+        "dismissed",
+        "lost"
+      ]
+    },
+    "novelty": {
+      "type": "number"
+    },
+    "affiliation": {
+      "$ref": "defs.schema.json#/$defs/Affiliation"
+    },
+    "affiliation_src": {
+      "type": "string",
+      "enum": [
+        "machine",
+        "human"
+      ]
+    },
+    "cot_uid": {
+      "type": "string",
+      "minLength": 1
+    },
+    "det_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "defs.schema.json#/$defs/Id"
+      },
+      "maxItems": 8
+    },
+    "assoc_friend_uid": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "affiliation_src": {
+            "const": "machine"
+          }
+        },
+        "required": [
+          "affiliation_src"
+        ]
+      },
+      "then": {
+        "properties": {
+          "affiliation": {
+            "const": "unknown"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/Execution.schema.json",
+  "title": "Execution",
+  "description": "proposal_id null => safety stop; stop_id then required.",
+  "type": "object",
+  "required": [
+    "exec_id",
+    "proposal_id",
+    "asset_id",
+    "step_idx",
+    "verb",
+    "status",
+    "detail",
+    "ts_ms"
+  ],
+  "properties": {
+    "exec_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "proposal_id": {
+      "anyOf": [
+        {
+          "$ref": "defs.schema.json#/$defs/Id"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "asset_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "step_idx": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "verb": {
+      "anyOf": [
+        {
+          "$ref": "defs.schema.json#/$defs/Verb"
+        },
+        {
+          "const": "arm"
+        }
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "sent",
+        "accepted",
+        "rejected",
+        "in_progress",
+        "completed",
+        "failed",
+        "aborted"
+      ]
+    },
+    "detail": {
+      "type": "string"
+    },
+    "ts_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "stop_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "mav_result": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "proposal_id": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "proposal_id"
+        ]
+      },
+      "then": {
+        "required": [
+          "stop_id"
+        ]
+      }
+    }
+  ]
+}

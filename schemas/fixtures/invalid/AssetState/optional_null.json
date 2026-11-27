@@ -1,0 +1,55 @@
+{
+  "_why": "optional failsafe.dll_countdown_s present as null",
+  "_schema_only": true,
+  "asset_id": "drone1",
+  "callsign": "DRONE 1",
+  "chip": "D1",
+  "kind": "quad",
+  "link": {
+    "state": "ok",
+    "last_heard_ms": 1795000001150
+  },
+  "pos": {
+    "lat": 40.071621,
+    "lon": -88.63,
+    "alt_msl_m": 270.0,
+    "alt_agl_m": 60.0
+  },
+  "att": {
+    "roll_deg": 1.2,
+    "pitch_deg": -4.0,
+    "yaw_deg": 2.0
+  },
+  "vel_ned": {
+    "n_mps": 9.8,
+    "e_mps": 0.3,
+    "d_mps": 0.0
+  },
+  "battery_pct": 81.0,
+  "mode": "AUTO.MISSION",
+  "armed": true,
+  "landed": false,
+  "failsafe": {
+    "dll_action": "return",
+    "dll_countdown_s": null
+  },
+  "task": {
+    "proposal_id": "prop-0007",
+    "steps": [
+      "takeoff",
+      "search"
+    ],
+    "step_idx": 1,
+    "status": "in_progress"
+  },
+  "sensors": [
+    {
+      "sensor_id": "eo0",
+      "kind": "eo",
+      "hfov_deg": 70.0,
+      "w": 1280,
+      "h": 720,
+      "stream": "video.down/drone1"
+    }
+  ]
+}

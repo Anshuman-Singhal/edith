@@ -1,0 +1,31 @@
+{
+  "intent_id": "in-0009",
+  "session_id": "vs-0042",
+  "utterance": {
+    "text": "drone one attack the vehicle",
+    "asr_conf": null,
+    "nbest": [
+      "drone one attack the vehicle"
+    ],
+    "engine": "moonshine",
+    "model_sha": "small-streaming-en",
+    "norm_profile": "spoken"
+  },
+  "heading_snapshot_deg": 41.5,
+  "operator_pos": {
+    "lat": 40.0698649,
+    "lon": -88.6302344
+  },
+  "parsed": {
+    "kind": "command",
+    "asset_ref": "drone1",
+    "params": {}
+  },
+  "slots": [],
+  "parser": {
+    "method": "grammar",
+    "conf": 1.0
+  },
+  "result": "rejected",
+  "reject_reason": "out_of_scope"
+}

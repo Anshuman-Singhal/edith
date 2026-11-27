@@ -1,0 +1,9 @@
+{
+  "_why": "held_ms required on ptt_down",
+  "kind": "ptt_down",
+  "gesture_seq": 17,
+  "pointer_count": 1,
+  "ctx": {
+    "proposal_id": "prop-0007"
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "_why": "voice required",
+  "seq": 812,
+  "ts_ms": 1795000001200,
+  "mode": "day",
+  "declutter": "full",
+  "quiet": false,
+  "operator": {
+    "lat": 40.0698649,
+    "lon": -88.6302344,
+    "heading_deg": 41.5,
+    "heading_unc_deg": 6.0
+  },
+  "status": {
+    "tak": "ok",
+    "gps": "sim",
+    "companion_battery_pct": 64.0,
+    "data_age_ms": 0,
+    "rec": true
+  },
+  "assets": [
+    {
+      "asset_id": "drone1",
+      "chip": "D1",
+      "mode_label": "SEARCH",
+      "battery_pct": 81.0,
+      "link": "ok",
+      "task_label": "NAI 1"
+    },
+    {
+      "asset_id": "drone2",
+      "chip": "D2",
+      "mode_label": "ORBIT",
+      "battery_pct": 77.0,
+      "link": "ok",
+      "task_label": "OVW"
+    }
+  ],
+  "minimap": {
+    "range_m": 500.0,
+    "entities": [
+      {
+        "ref": "self",
+        "kind": "self",
+        "marked": false,
+        "rel_e_m": 0.0,
+        "rel_n_m": 0.0,
+        "heading_deg": 41.5,
+        "age_ms": 0,
+        "stale": false
+      },
+      {
+        "ref": "EDITH-SIM-tm-2",
+        "kind": "friend",
+        "marked": false,
+        "rel_e_m": -100.0,
+        "rel_n_m": 55.0,
+        "label": "1-2",
+        "age_ms": 1800,
+        "stale": false
+      },
+      {
+        "ref": "drone1",
+        "kind": "own_drone",
+        "marked": false,
+        "rel_e_m": 20.0,
+        "rel_n_m": 195.0,
+        "heading_deg": 2.0,
+        "label": "D1",
+        "age_ms": 100,
+        "stale": false
+      },
+      {
+        "ref": "t-0031",
+        "kind": "unknown",
+        "marked": false,
+        "rel_e_m": 80.0,
+        "rel_n_m": 315.0,
+        "age_ms": 100,
+        "stale": false
+      }
+    ],
+    "clusters": []
+  },
+  "tape": {
+    "carets": [
+      {
+        "ref": "drone1",
+        "bearing_deg": 5.9,
+        "style": "own_drone"
+      },
+      {
+        "ref": "t-0031",
+        "bearing_deg": 14.3,
+        "style": "unknown"
+      },
+      {
+        "ref": "EDITH-SIM-tm-2",
+        "bearing_deg": 298.8,
+        "style": "friend"
+      }
+    ]
+  },
+  "alert": {
+    "alert_id": "al-0012",
+    "tier": "caution",
+    "label": "VEHICLE",
+    "bearing_deg": 14.3,
+    "range_m": 325.0,
+    "ce_m": 14.0,
+    "row2": "DRONE 1 · UNKNOWN · 3 s",
+    "row3": "say WATCH · MARK · DISMISS",
+    "gesture_dismiss": true,
+    "shown_since_ms": 1795000000900,
+    "flash_until_ms": 1795000001900,
+    "queue": {
+      "count": 1,
+      "warning": 0,
+      "caution": 1,
+      "advisory": 0
+    }
+  }
+}

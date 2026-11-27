@@ -1,0 +1,9 @@
+{
+  "_why": "heading_deg must be < 360",
+  "yaw_deg": 41.5,
+  "pitch_deg": -3.2,
+  "roll_deg": 0.8,
+  "heading_deg": 360.0,
+  "heading_unc_deg": 6.0,
+  "source": "rv"
+}

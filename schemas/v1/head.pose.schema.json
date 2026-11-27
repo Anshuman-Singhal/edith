@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/head.pose.schema.json",
+  "title": "head.pose",
+  "type": "object",
+  "required": [
+    "yaw_deg",
+    "pitch_deg",
+    "roll_deg",
+    "heading_deg",
+    "heading_unc_deg",
+    "source"
+  ],
+  "properties": {
+    "yaw_deg": {
+      "type": "number"
+    },
+    "pitch_deg": {
+      "type": "number"
+    },
+    "roll_deg": {
+      "type": "number"
+    },
+    "heading_deg": {
+      "$ref": "defs.schema.json#/$defs/Deg360"
+    },
+    "heading_unc_deg": {
+      "type": "number",
+      "minimum": 0
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "rv",
+        "fused",
+        "game_rv",
+        "scripted"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

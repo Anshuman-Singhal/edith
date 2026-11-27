@@ -1,0 +1,10 @@
+{
+  "_why": "codec not in enum",
+  "stream": "audio.up",
+  "seq": 5501,
+  "ts_ms": 1795000000010,
+  "codec": "opus",
+  "sr": 16000,
+  "ch": 1,
+  "preroll": true
+}

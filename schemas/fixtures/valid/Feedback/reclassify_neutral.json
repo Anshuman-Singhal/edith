@@ -1,0 +1,9 @@
+{
+  "track_id": "t-0031",
+  "verb": "reclassify",
+  "operator_id": "VIKING 1-1",
+  "method": "touch_companion",
+  "alert_id": "al-0012",
+  "ts_ms": 1795000009000,
+  "affiliation": "neutral"
+}

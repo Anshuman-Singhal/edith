@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edith.local/schemas/v1/Detection.schema.json",
+  "title": "Detection",
+  "description": "Machine detections carry class only (person|vehicle|other); no identity.",
+  "type": "object",
+  "required": [
+    "det_id",
+    "frame_id",
+    "frame_ts_ms",
+    "source",
+    "cls",
+    "conf",
+    "bbox_norm",
+    "det_px_h",
+    "infer"
+  ],
+  "properties": {
+    "det_id": {
+      "$ref": "defs.schema.json#/$defs/Id"
+    },
+    "frame_id": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "frame_ts_ms": {
+      "$ref": "defs.schema.json#/$defs/TsMs"
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "asset_id",
+        "sensor_id"
+      ],
+      "properties": {
+        "asset_id": {
+          "$ref": "defs.schema.json#/$defs/Id"
+        },
+        "sensor_id": {
+          "$ref": "defs.schema.json#/$defs/Id"
+        }
+      },
+      "additionalProperties": true
+    },
+    "cls": {
+      "$ref": "defs.schema.json#/$defs/Cls"
+    },
+    "conf": {
+      "$ref": "defs.schema.json#/$defs/Conf"
+    },
+    "bbox_norm": {
+      "$ref": "defs.schema.json#/$defs/BboxNorm"
+    },
+    "det_px_h": {
+      "type": "number",
+      "minimum": 0
+    },
+    "infer": {
+      "type": "object",
+      "required": [
+        "placement",
+        "model",
+        "model_sha",
+        "t_capture_ms",
+        "t_start_ms",
+        "t_end_ms"
+      ],
+      "properties": {
+        "placement": {
+          "type": "string",
+          "enum": [
+            "companion",
+            "glasses",
+            "offload"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model_sha": {
+          "type": "string"
+        },
+        "t_capture_ms": {
+          "$ref": "defs.schema.json#/$defs/TsMs"
+        },
+        "t_start_ms": {
+          "$ref": "defs.schema.json#/$defs/TsMs"
+        },
+        "t_end_ms": {
+          "$ref": "defs.schema.json#/$defs/TsMs"
+        }
+      },
+      "additionalProperties": true
+    },
+    "tile": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": true
+}

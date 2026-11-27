@@ -1,0 +1,28 @@
+{
+  "role": "fake",
+  "proto": [
+    1
+  ],
+  "token": "tok-7f3a9c",
+  "device": {
+    "model": "FakeGlasses",
+    "fingerprint": "fake",
+    "sdk_int": 0
+  },
+  "display": {
+    "win_w": 1280,
+    "win_h": 480,
+    "eye_w": 640,
+    "eye_h": 480,
+    "eyes": "sbs"
+  },
+  "input": {
+    "ptt": "hold",
+    "temple_confirm": false
+  },
+  "caps": {
+    "inference": [],
+    "camera": false,
+    "tts": false
+  }
+}
