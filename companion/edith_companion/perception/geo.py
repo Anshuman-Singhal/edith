@@ -207,7 +207,7 @@ class GeoFix:
 
 
 def locate(pose: CamPose, K: Intrinsics, u: float, v: float, box_h_px: float = 0.0,
-           noise: GeoNoise = GeoNoise()) -> GeoFix | None:
+           noise: GeoNoise = GeoNoise()) -> GeoFix | None:  # noqa: B008 (frozen)
     """Geolocate pixel (u, v) (box bottom-centre) with a CE90 from the error budget."""
     g0 = pixel_to_ground(pose, K, u, v)
     if g0 is None:

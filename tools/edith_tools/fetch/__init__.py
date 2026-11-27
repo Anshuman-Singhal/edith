@@ -104,8 +104,13 @@ def fetch_artifact(a: dict, root: Path, src_dir: Path | None = None) -> str:
     dest.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as td:
         tmp = Path(td) / "download"
-        local = src_dir / Path(a["url"]).name if src_dir else None
-        if local and local.is_file():
+        local = None
+        if src_dir:  # pre-downloaded copy: match local_name, dest basename or URL basename
+            for nm in (a.get("local_name"), Path(a["dest"]).name, Path(a["url"]).name):
+                if nm and (src_dir / nm).is_file():
+                    local = src_dir / nm
+                    break
+        if local:
             shutil.copyfile(local, tmp)
         else:
             download(a["url"], tmp)
